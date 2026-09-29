@@ -59,12 +59,4 @@ class FunctionaryRole(BaseModel):
                 name = "unique_functionary_role",
             )
         ]
-    
-
-
-
-
-
-
-
 
