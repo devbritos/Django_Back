@@ -2,11 +2,11 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Activies, Evidence
+from .models import Activity, Evidence
 
 
-@admin.register(Activies)
-class ActiviesAdmin(admin.ModelAdmin):
+@admin.register(Activity)
+class ActivityAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'date',

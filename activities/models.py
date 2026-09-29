@@ -30,6 +30,7 @@ class Evidence(BaseModel):
     validity_state = models.CharField(max_length=20)
     date_validity = models.DateField()
     observations_validity = models.TextField()
+    
     verificator = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT
