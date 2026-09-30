@@ -18,8 +18,11 @@ class Activity(BaseModel):
         on_delete=models.PROTECT
     )
     commitment = models.ForeignKey(
-        'configuration.Commitment',
-        on_delete=models.PROTECT
+        'agenda.Commitment',
+        on_delete=models.PROTECT,
+        related_name = 'activities',
+        null = True,
+        blank = True #Commitment its optional
     )
 
 class Evidence(BaseModel):
@@ -33,14 +36,21 @@ class Evidence(BaseModel):
     
     verificator = models.ForeignKey(
         'personal.Functionary',
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
+        null = True,
+        blank = True,
+        related_name='evidences_verified',
     )
     activity = models.ForeignKey(
-        'Activies',
-        on_delete=models.PROTECT
+        'activities.Activity',
+        on_delete=models.PROTECT,
+        related_name='evidences'
+
+
     )
     funcionary = models.ForeignKey(
         'personal.Functionary',
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
+        related_name='evidences_uploaded',
     )
 

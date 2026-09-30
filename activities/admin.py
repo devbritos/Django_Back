@@ -15,13 +15,13 @@ class ActivityAdmin(admin.ModelAdmin):
         'telephone_contact',
         'state_validity',
         'functionary',
-        'measureming',
+        'measuring',
         'commitment',
     )
 
     list_filter = (
         'state_validity',
-        'measureming',
+        'measuring',
     )
 
     search_fields = (

@@ -23,17 +23,17 @@ class Goal(BaseModel):
     goal_value = models.FloatField()
     validity = models.BooleanField(default=True)
 
-    id_cargo = models.ForeignKey(
-        'Cargo',
+    position = models.ForeignKey(
+        'personal.Position',
         on_delete=models.PROTECT
     )
 
-    id_period = models.ForeignKey(
+    period = models.ForeignKey(
         'Period',
         on_delete=models.PROTECT
     )
 
-    id_measuring = models.ForeignKey(
+    measuring = models.ForeignKey(
         'Measuring',
         on_delete=models.PROTECT
     )

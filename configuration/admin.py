@@ -44,7 +44,7 @@ class GoalAdmin(admin.ModelAdmin):
         'target_value',
         'goal_value',
         'unity',
-        'cargo',
+        'position',
         'measuring',
         'period',
         'validity'
@@ -62,7 +62,7 @@ class GoalAdmin(admin.ModelAdmin):
     )
 
     autocomplete_fields = (
-        'cargo',
+        'position',
         'measuring',
         'period'
     )
