@@ -53,4 +53,3 @@ class Evidence(BaseModel):
         on_delete=models.PROTECT,
         related_name='evidences_uploaded',
     )
-
