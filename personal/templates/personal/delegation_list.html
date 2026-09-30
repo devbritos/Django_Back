@@ -1,27 +1,36 @@
-<!-- personal/templates/personal/delegacion_list.html -->
+<!-- personal/templates/personal/delegation_list.html -->
 {% extends "base.html" %}
 
-{% block title %}Delegaciones{% endblock %}
+{% block title %}Delegations{% endblock %}
 
 {% block content %}
-<h1>Delegaciones</h1>
-<table class="table">
-    <thead>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Delegations</h1>
+    <a href="{% url 'delegation_create' %}" class="btn btn-success">+ Create Delegation</a>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
         <tr>
-            <th>Nombre</th>
-            <th>Estado</th>
-            <th>Ámbito</th>
+            <th>Name</th>
+            <th>State</th>
+            <th>Field</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        {% for delegacion in delegaciones %}
+        {% for delegation in delegations %}
         <tr>
-            <td>{{ delegacion.nombre }}</td>
-            <td>{{ delegacion.estado }}</td>
-            <td>{{ delegacion.ambito }}</td>
+            <td>{{ delegation.name }}</td>
+            <td>{{ delegation.get_state_display }}</td>
+            <td>{{ delegation.get_field_display }}</td>
+            <td>
+                <a href="{% url 'delegation_update' delegation.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <a href="{% url 'delegation_delete' delegation.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+            </td>
         </tr>
         {% empty %}
-        <tr><td colspan="3">No hay delegaciones registradas.</td></tr>
+        <tr><td colspan="4" class="text-center">There are no Delegations registered yet.</td></tr>
         {% endfor %}
     </tbody>
 </table>
