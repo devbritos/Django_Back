@@ -1,7 +1,7 @@
 # personal/urls.py
 from django.urls import path
-from .views import DelegacionListView
+from .views import DelegationListView
 
 urlpatterns = [
-    path('delegaciones/', DelegacionListView.as_view(), name='delegacion_list'),
+    path('delegations/', DelegationListView.as_view(), name='delegation_list'),
 ]
