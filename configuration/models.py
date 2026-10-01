@@ -1,7 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from core.models import BaseModel
 
-# Create your models here.
+
 class Period(BaseModel):
     start_date = models.DateField()
     end_date = models.DateField()
@@ -12,10 +13,25 @@ class Period(BaseModel):
     maximum_computable_days = models.IntegerField()
     semaphore = models.CharField(max_length=10)
 
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError(
+                {"end_date": "La fecha de término no puede ser anterior a la de inicio."}
+            )
+
+    def __str__(self):
+        return f"{self.start_date} – {self.end_date}"
+
+
 class Measuring(BaseModel):
     service = models.CharField(max_length=100)
     measurable_item = models.CharField(max_length=100)
     validity = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.service} – {self.measurable_item}"
+
 
 class Goal(BaseModel):
     target_value = models.CharField(max_length=100)
@@ -37,3 +53,6 @@ class Goal(BaseModel):
         'Measuring',
         on_delete=models.PROTECT
     )
+
+    def __str__(self):
+        return f"{self.position} · {self.measuring} · {self.period}"
