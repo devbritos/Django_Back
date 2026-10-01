@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from core.models import BaseModel
 
@@ -8,7 +9,7 @@ class Activity(BaseModel):
     taken_action = models.TextField()
     name_contact = models.CharField(max_length=70)
     telephone_contact = models.CharField(max_length=20)
-    state_validity = models.CharField(max_length=20)
+    state_validity = models.CharField(max_length=20, default='PENDING')
     functionary = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT
@@ -30,11 +31,20 @@ class Activity(BaseModel):
 
 
 class Evidence(BaseModel):
+    class Validity(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+
     name = models.CharField(max_length=50)
     author = models.CharField(max_length=50)
     date_evidence = models.DateField()
     metadata = models.CharField(max_length=500)
-    validity_state = models.CharField(max_length=20)
+    validity_state = models.CharField(
+        max_length=20,
+        choices=Validity.choices,
+        default=Validity.PENDING,
+    )
     date_validity = models.DateField(null=True, blank=True)
     observations_validity = models.TextField(blank=True)
 
@@ -55,6 +65,13 @@ class Evidence(BaseModel):
         on_delete=models.PROTECT,
         related_name='evidences_uploaded',
     )
+
+    def clean(self):
+        super().clean()
+        if self.verificator_id and self.verificator_id == self.funcionary_id:
+            raise ValidationError(
+                {'verificator': 'El verificador no puede ser quien subió la evidencia.'}
+            )
 
     def __str__(self):
         return self.name

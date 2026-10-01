@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib import admin, messages
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -6,10 +5,6 @@ from django.utils import timezone
 from .models import Activity, Evidence
 
 AUDIT_FIELDS = ('created_at', 'updated_at', 'deleted_at')
-
-# Ajusta estos valores a los que realmente guardas en Evidence.validity_state
-APPROVED = "APPROVED"
-REJECTED = "REJECTED"
 
 
 class EvidenceInline(admin.TabularInline):
@@ -19,20 +14,6 @@ class EvidenceInline(admin.TabularInline):
     autocomplete_fields = ("funcionary",)
     extra = 0
     show_change_link = True
-
-
-class EvidenceAdminForm(forms.ModelForm):
-    class Meta:
-        model = Evidence
-        fields = "__all__"
-
-    def clean(self):
-        data = super().clean()
-        verificator = data.get("verificator")
-        uploader = data.get("funcionary")
-        if verificator and uploader and verificator == uploader:
-            self.add_error("verificator", "El verificador no puede ser quien subió la evidencia.")
-        return data
 
 
 @admin.register(Activity)
@@ -60,22 +41,27 @@ class ActivityAdmin(admin.ModelAdmin):
     ordering = ('-date',)
     date_hierarchy = 'date'
     list_select_related = ('functionary', 'measuring', 'commitment')
+    autocomplete_fields = ('functionary', 'measuring', 'commitment')
     readonly_fields = AUDIT_FIELDS
     inlines = [EvidenceInline]
 
     def get_queryset(self, request):
+        # Cuenta las evidencias aprobadas en la misma consulta (sin una por fila).
         return super().get_queryset(request).annotate(
-            approved_count=Count("evidences", filter=Q(evidences__validity_state=APPROVED))
+            approved_count=Count(
+                "evidences",
+                filter=Q(evidences__validity_state=Evidence.Validity.APPROVED),
+            )
         )
 
     @admin.display(boolean=True, description="Válida", ordering="approved_count")
     def is_valid(self, obj):
+        # Una actividad solo cuenta si tiene al menos una evidencia aprobada.
         return obj.approved_count > 0
 
 
 @admin.register(Evidence)
 class EvidenceAdmin(admin.ModelAdmin):
-    form = EvidenceAdminForm
     list_display = (
         'id',
         'name',
@@ -90,21 +76,23 @@ class EvidenceAdmin(admin.ModelAdmin):
     search_fields = ('name', 'author', 'activity__application')
     ordering = ('-date_evidence',)
     list_select_related = ('verificator', 'activity', 'funcionary')
+    autocomplete_fields = ('activity', 'verificator', 'funcionary')
     readonly_fields = AUDIT_FIELDS
     actions = ['approve_evidences', 'reject_evidences']
 
     def _verifier(self, request):
+        # Funcionario del usuario logueado (None hasta que exista User → Functionary).
         return getattr(request.user, "functionary", None)
 
-    @admin.action(description="Aprobar evidencias seleccionadas")
+    @admin.action(description="Aprobar evidencias seleccionadas", permissions=["change"])
     def approve_evidences(self, request, queryset):
         verifier = self._verifier(request)
         approved = skipped = 0
-        for ev in queryset.exclude(validity_state=APPROVED):
+        for ev in queryset.exclude(validity_state=Evidence.Validity.APPROVED):
             if verifier and ev.funcionary_id == verifier.pk:
-                skipped += 1
+                skipped += 1  # no puede aprobar lo que subió él mismo
                 continue
-            ev.validity_state = APPROVED
+            ev.validity_state = Evidence.Validity.APPROVED
             ev.date_validity = timezone.localdate()
             ev.verificator = verifier
             ev.save()
@@ -117,12 +105,12 @@ class EvidenceAdmin(admin.ModelAdmin):
                 messages.WARNING,
             )
 
-    @admin.action(description="Rechazar evidencias seleccionadas")
+    @admin.action(description="Rechazar evidencias seleccionadas", permissions=["change"])
     def reject_evidences(self, request, queryset):
         verifier = self._verifier(request)
         rejected = 0
-        for ev in queryset.exclude(validity_state=REJECTED):
-            ev.validity_state = REJECTED
+        for ev in queryset.exclude(validity_state=Evidence.Validity.REJECTED):
+            ev.validity_state = Evidence.Validity.REJECTED
             ev.date_validity = timezone.localdate()
             ev.verificator = verifier
             ev.save()
