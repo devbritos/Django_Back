@@ -1,7 +1,7 @@
 from django.db import models
 from core.models import BaseModel
 
-# Create your models here.
+
 class Activity(BaseModel):
     date = models.DateField()
     application = models.CharField(max_length=100)
@@ -20,10 +20,14 @@ class Activity(BaseModel):
     commitment = models.ForeignKey(
         'agenda.Commitment',
         on_delete=models.PROTECT,
-        related_name = 'activities',
-        null = True,
-        blank = True #Commitment its optional
+        related_name='activities',
+        null=True,
+        blank=True  # Commitment es opcional
     )
+
+    def __str__(self):
+        return f"{self.date} – {self.application}"
+
 
 class Evidence(BaseModel):
     name = models.CharField(max_length=50)
@@ -31,25 +35,26 @@ class Evidence(BaseModel):
     date_evidence = models.DateField()
     metadata = models.CharField(max_length=500)
     validity_state = models.CharField(max_length=20)
-    date_validity = models.DateField()
-    observations_validity = models.TextField()
-    
+    date_validity = models.DateField(null=True, blank=True)
+    observations_validity = models.TextField(blank=True)
+
     verificator = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT,
-        null = True,
-        blank = True,
+        null=True,
+        blank=True,
         related_name='evidences_verified',
     )
     activity = models.ForeignKey(
         'activities.Activity',
         on_delete=models.PROTECT,
         related_name='evidences'
-
-
     )
     funcionary = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT,
         related_name='evidences_uploaded',
     )
+
+    def __str__(self):
+        return self.name
