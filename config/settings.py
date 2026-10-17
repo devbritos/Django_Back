@@ -144,6 +144,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
  
 # Login / Logout (las rutas "login" y "logout" están en config/urls.py)
 LOGIN_URL = "login"
+#dashboard_redirect it's in analytics/views
 LOGIN_REDIRECT_URL = 'dashboard_redirect'
 LOGOUT_REDIRECT_URL = "login"
  
