@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-from decouple import config
+from decouple import config, Csv
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
@@ -27,7 +27,10 @@ SECRET_KEY = 'django-insecure-&kn^$u$y^d**)8lq3=pq(wawhl6=n2f_2gz#+*k=!tvtf7*37_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
  
-ALLOWED_HOSTS = []
+
+
+# Esto convierte automáticamente la cadena separada por comas en una lista de Python
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
  
  
 # Application definition
