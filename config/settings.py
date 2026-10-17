@@ -13,10 +13,10 @@ from decouple import config, Csv
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
- 
+from dotenv import load_dotenv 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
- 
+load_dotenv(BASE_DIR / '.env')  # Forzar la lectura del archivo .env
  
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -30,7 +30,7 @@ DEBUG = True
 
 
 # Esto convierte automáticamente la cadena separada por comas en una lista de Python
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+ALLOWED_HOSTS = ['3.82.124.141', 'localhost', '127.0.0.1']
  
  
 # Application definition
@@ -85,15 +85,18 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
  
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+    # Producción (AWS con MariaDB)
 DATABASES = {
-   'default': {
-       'ENGINE': 'django.db.backends.mysql',
-       'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-     'PASSWORD': config('DB_PASSWORD'),
-       'HOST': config('DB_HOST'),
-       'PORT': config('DB_PORT', default='3306'),
-  }}
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST'),
+            'PORT': config('DB_PORT', default='3306'),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
