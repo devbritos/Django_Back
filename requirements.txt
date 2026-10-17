@@ -5,3 +5,4 @@ tzdata==2026.4
 django-crispy-forms>=2.3
 crispy-bootstrap5>=2024.10
 python-decouple
+gunicorn
