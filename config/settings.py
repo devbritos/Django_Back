@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
- 
+from decouple import config
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
@@ -77,19 +77,21 @@ TEMPLATES = [
 ]
  
 WSGI_APPLICATION = 'config.wsgi.application'
- 
+## Para ver el correo "enviado" en la terminal (sin configurar SMTP real)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
  
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
- 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
- 
- 
+   'default': {
+       'ENGINE': 'django.db.backends.mysql',
+       'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+     'PASSWORD': config('DB_PASSWORD'),
+       'HOST': config('DB_HOST'),
+       'PORT': config('DB_PORT', default='3306'),
+  }}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
  
@@ -130,7 +132,7 @@ STATICFILES_DIRS = [
 ]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
- 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
  
  
