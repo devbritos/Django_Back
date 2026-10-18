@@ -10,8 +10,8 @@ AUDIT_FIELDS = ('created_at', 'updated_at', 'deleted_at')
 class EvidenceInline(admin.TabularInline):
     model = Evidence
     fk_name = "activity"
-    fields = ("name", "author", "date_evidence", "metadata", "validity_state", "funcionary")
-    autocomplete_fields = ("funcionary",)
+    fields = ("name", "author", "date_evidence", "metadata", "validity_state", "functionary")
+    autocomplete_fields = ("functionary",)
     extra = 0
     show_change_link = True
 
@@ -70,13 +70,13 @@ class EvidenceAdmin(admin.ModelAdmin):
         'validity_state',
         'verificator',
         'activity',
-        'funcionary',
+        'functionary',
     )
     list_filter = ('validity_state', 'date_evidence')
     search_fields = ('name', 'author', 'activity__application')
     ordering = ('-date_evidence',)
-    list_select_related = ('verificator', 'activity', 'funcionary')
-    autocomplete_fields = ('activity', 'verificator', 'funcionary')
+    list_select_related = ('verificator', 'activity', 'functionary')
+    autocomplete_fields = ('activity', 'verificator', 'functionary')
     readonly_fields = AUDIT_FIELDS
     actions = ['approve_evidences', 'reject_evidences']
 

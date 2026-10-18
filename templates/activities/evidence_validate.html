@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Validar evidencia</h2>
+<p><strong>{{ evidence.name }}</strong> — subida por {{ evidence.functionary }}</p>
+{% if evidence.file %}
+<p><a href="{{ evidence.file.url }}" target="_blank">Ver archivo</a></p>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Guardar validación</button>
+    <a href="{% url 'activities:evidence_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+</form>
+{% endblock %}
