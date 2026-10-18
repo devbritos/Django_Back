@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Evidencias</h2>
+    <a href="{% url 'activities:evidence_create' %}" class="btn btn-primary">+ Subir evidencia</a>
+</div>
+<table class="table table-striped">
+    <thead>
+        <tr><th>Nombre</th><th>Actividad</th><th>Subida por</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for e in evidences %}
+        <tr>
+            <td>{{ e.name }}</td>
+            <td>{{ e.activity }}</td>
+            <td>{{ e.functionary }}</td>
+            <td>{{ e.validity_state }}</td>
+            <td>
+                {% if e.validity_state == 'PENDING' %}
+                <a href="{% url 'activities:evidence_validate' e.pk %}" class="btn btn-sm btn-outline-primary">Validar</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted">Sin evidencias registradas</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

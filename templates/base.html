@@ -39,6 +39,12 @@
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" href="{% url 'personal:delegation_list' %}">Delegaciones</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="{% url 'activities:activity_list' %}">Actividades</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="{% url 'activities:evidence_list' %}">Evidencias</a>
+                    </li>                    
                 </ul>
 
                 {% if user.is_authenticated %}
