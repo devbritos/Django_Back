@@ -47,7 +47,7 @@ class Evidence(BaseModel):
     )
     date_validity = models.DateField(null=True, blank=True)
     observations_validity = models.TextField(blank=True)
-
+    file = models.FileField(upload_to='evidences/%Y/%m/')
     verificator = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT,
@@ -55,12 +55,13 @@ class Evidence(BaseModel):
         blank=True,
         related_name='evidences_verified',
     )
+    #Se borra la actividad, Se borra la evidencia
     activity = models.ForeignKey(
         'activities.Activity',
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='evidences'
     )
-    funcionary = models.ForeignKey(
+    functionary = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT,
         related_name='evidences_uploaded',
