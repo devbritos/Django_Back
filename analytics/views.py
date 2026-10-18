@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import redirect
 from personal.models import Functionary, Delegation
 from agenda.models import Commitment
-from activities.models import Actividad  # ajusta el nombre real
+from activities.models import Activity  # ajusta el nombre real
 from django.utils import timezone
 
 @login_required
@@ -20,11 +20,14 @@ def admin_dashboard(request):
 
 @login_required
 def user_dashboard(request):
-    funcionario = request.user.functionary  # gracias al OneToOneField que ya armamos
+    funcionario = getattr(request.user, 'functionary', None)
+
+    if funcionario is None:
+        return render(request, 'analytics/no_functionary.html')
+
     context = {
         'funcionario': funcionario,
-        'mis_actividades': funcionario.actividades.count(),  # si tienes ese related_name
-        'mis_compromisos': funcionario.commitments.all(),
+        'mis_compromisos': Commitment.objects.filter(functionary=funcionario),
     }
     return render(request, 'analytics/user_dashboard.html', context)
 
