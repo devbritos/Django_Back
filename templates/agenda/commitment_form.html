@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{% if object %}Editar{% else %}Nuevo{% endif %} compromiso</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{% url 'agenda:commitment_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+</form>
+{% endblock %}

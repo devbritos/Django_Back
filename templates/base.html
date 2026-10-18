@@ -44,7 +44,10 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" href="{% url 'activities:evidence_list' %}">Evidencias</a>
-                    </li>                    
+                    </li> 
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="{% url 'agenda:commitment_list' %}">Agenda</a>
+                    </li>                   
                 </ul>
 
                 {% if user.is_authenticated %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>¿Eliminar este compromiso?</h2>
+<p>{{ object.applic_name }} — {{ object.commitment_date }}</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'agenda:commitment_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+</form>
+{% endblock %}
