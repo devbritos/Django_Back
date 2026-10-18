@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Hola, {{ funcionario.names }}</h2>
+    <p class="text-muted">{{ funcionario.position.name }} — {{ funcionario.delegation.name }}</p>
+
+    <h4 class="mt-5">Mis compromisos</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Solicitante</th><th>Territorio</th><th>Fecha</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            {% for c in mis_compromisos %}
+            <tr>
+                <td>{{ c.applic_name }}</td>
+                <td>{{ c.territory }}</td>
+                <td>{{ c.commitment_date }}</td>
+                <td>{{ c.get_state_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">Sin compromisos registrados</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

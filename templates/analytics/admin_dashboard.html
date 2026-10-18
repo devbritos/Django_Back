@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Panel de Control</h2>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h3>{{ total_funcionarios }}</h3>
+                <p class="text-muted">Funcionarios</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h3>{{ total_delegaciones }}</h3>
+                <p class="text-muted">Delegaciones</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <h3>{{ compromisos_pendientes }}</h3>
+                <p class="text-muted">Compromisos pendientes</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 border-danger">
+                <h3 class="text-danger">{{ compromisos_vencidos }}</h3>
+                <p class="text-muted">Vencidos</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
