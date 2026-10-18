@@ -10,5 +10,5 @@ urlpatterns = [
     path("personal/", include("personal.urls")),
     path("dashboard/", include("analytics.urls")),
     path("activities/", include("activities.urls")),
-    
+    path("agenda/", include("agenda.urls")),
 ]
