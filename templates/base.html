@@ -21,60 +21,115 @@
             background-color: #f5f3f0;
         }
 
-        /* Navbar */
+        /* Navbar superior */
         .bg-municipal {
             background: linear-gradient(135deg, var(--municipal-red) 0%, var(--municipal-red-dark) 100%);
         }
 
         .navbar-brand-logo {
-            height: 44px;
+            height: 42px;
             width: auto;
             object-fit: contain;
-            transition: transform 0.25s ease;
         }
 
-        .navbar-brand:hover .navbar-brand-logo {
-            transform: scale(1.06) rotate(-2deg);
+        .btn-menu-toggle {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .btn-menu-toggle:hover,
+        .btn-menu-toggle:focus {
+            background-color: rgba(255,255,255,0.15);
+            color: #fff;
         }
 
-        .nav-link {
-            position: relative;
-            transition: color 0.2s ease;
-            padding-left: 0.6rem !important;
-            padding-right: 0.6rem !important;
+        /* Dropdown de usuario */
+        .user-menu .btn {
+            transition: all 0.2s ease;
+            border-color: rgba(255,255,255,0.4);
+        }
+        .user-menu .btn:hover,
+        .user-menu .btn:focus {
+            background-color: rgba(255,255,255,0.15);
+            border-color: #fff;
+        }
+        .user-menu .dropdown-menu {
+            border: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-radius: 0.6rem;
+            overflow: hidden;
+        }
+        .user-menu .dropdown-item.text-danger:hover {
+            background-color: #fdecea;
         }
 
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            left: 0.6rem;
-            right: 0.6rem;
-            bottom: 2px;
-            height: 2px;
-            background-color: var(--municipal-gold);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.25s ease;
+        /* Sidebar / Offcanvas */
+        .offcanvas-municipal {
+            width: 280px;
+            background-color: #fff;
         }
 
-        .nav-link:hover::after,
-        .nav-link.active::after {
-            transform: scaleX(1);
+        .offcanvas-municipal .offcanvas-header {
+            background: linear-gradient(135deg, var(--municipal-red) 0%, var(--municipal-red-dark) 100%);
+            color: #fff;
         }
 
-        .nav-link.active {
-            color: #fff !important;
+        .offcanvas-municipal .offcanvas-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        .sidebar-section-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #a39b92;
+            padding: 1rem 1.25rem 0.4rem;
             font-weight: 700;
         }
 
-        /* Botón salir */
-        .btn-outline-light.btn-sm {
-            transition: all 0.2s ease;
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1.25rem;
+            color: #4a433d;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+            transition: all 0.18s ease;
         }
-        .btn-outline-light.btn-sm:hover {
-            background-color: #fff;
+
+        .sidebar-link i {
+            font-size: 1.15rem;
+            width: 1.4rem;
+            text-align: center;
+            color: #b0453f;
+            transition: transform 0.18s ease;
+        }
+
+        .sidebar-link:hover {
+            background-color: #faf1ef;
             color: var(--municipal-red-dark);
-            transform: translateY(-1px);
+            border-left-color: var(--municipal-gold);
+        }
+
+        .sidebar-link:hover i {
+            transform: translateX(2px);
+        }
+
+        .sidebar-link.active {
+            background-color: #faf1ef;
+            color: var(--municipal-red-dark);
+            border-left-color: var(--municipal-red);
+        }
+
+        .sidebar-link.active i {
+            color: var(--municipal-red-dark);
         }
 
         /* Contenido */
@@ -94,7 +149,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
-        /* Tarjetas (si las usas en dashboards) */
+        /* Tarjetas */
         .card {
             border: none;
             border-radius: 0.75rem;
@@ -123,74 +178,77 @@
     </style>
 </head>
 <body>
+    <!-- Navbar superior -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-municipal shadow-sm sticky-top">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center me-4" href="{% url 'dashboard_redirect' %}">
-                <img src="{% static 'images/faroletras.png' %}" alt="Logo SGR" class="navbar-brand-logo me-2">
-                <span class="fw-bold d-none d-md-inline">SGR</span>
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+        <div class="container-fluid px-3">
+            <button class="btn-menu-toggle me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                <i class="bi bi-list"></i>
             </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if request.resolver_match.url_name == 'dashboard_redirect' or 'dashboard' in request.path %}active{% endif %}" href="{% url 'dashboard_redirect' %}">
-                            <i class="bi bi-speedometer2 me-1"></i>Panel
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if 'functionaries' in request.path %}active{% endif %}" href="{% url 'personal:functionary_list' %}">
-                            <i class="bi bi-people-fill me-1"></i>Funcionarios
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if 'delegations' in request.path %}active{% endif %}" href="{% url 'personal:delegation_list' %}">
-                            <i class="bi bi-geo-alt-fill me-1"></i>Delegaciones
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if 'agenda' in request.path %}active{% endif %}" href="{% url 'agenda:commitment_list' %}">
-                            <i class="bi bi-calendar-check-fill me-1"></i>Agenda
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if 'activities' in request.path and 'evidencias' not in request.path %}active{% endif %}" href="{% url 'activities:activity_list' %}">
-                            <i class="bi bi-clipboard2-check-fill me-1"></i>Actividades
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold {% if 'evidencias' in request.path %}active{% endif %}" href="{% url 'activities:evidence_list' %}">
-                            <i class="bi bi-file-earmark-image-fill me-1"></i>Evidencias
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="{% url 'activities:activity_list' %}">Actividades</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="{% url 'activities:evidence_list' %}">Evidencias</a>
-                    </li> 
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="{% url 'agenda:commitment_list' %}">Agenda</a>
-                    </li>                   
-                </ul>
+            <a class="navbar-brand d-flex align-items-center me-auto" href="{% url 'dashboard_redirect' %}">
+                <img src="{% static 'images/faroletras.png' %}" alt="Logo SGR" class="navbar-brand-logo me-2">
+                <span class="fw-bold d-none d-sm-inline">SGR</span>
+            </a>
 
-                {% if user.is_authenticated %}
-                <form method="post" action="{% url 'logout' %}" class="d-flex align-items-center m-0">
-                    {% csrf_token %}
-                    <span class="text-white-50 me-2 small d-none d-lg-inline">
-                        <i class="bi bi-person-circle me-1"></i>{{ user.username }}
-                    </span>
-                    <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-box-arrow-right me-1"></i>Salir
-                    </button>
-                </form>
-                {% endif %}
+            {% if user.is_authenticated %}
+            <div class="dropdown user-menu">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span class="d-none d-sm-inline">{{ user.username }}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Sesión iniciada como</h6></li>
+                    <li><span class="dropdown-item-text text-muted small">{{ user.email|default:user.username }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form method="post" action="{% url 'logout' %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                            </button>
+                        </form>
+                    </li>
+                </ul>
             </div>
+            {% endif %}
         </div>
     </nav>
+
+    <!-- Sidebar / Offcanvas -->
+    <div class="offcanvas offcanvas-start offcanvas-municipal" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title d-flex align-items-center" id="sidebarMenuLabel">
+                <img src="{% static 'images/faroletras.png' %}" alt="Logo SGR" style="height: 32px;" class="me-2">
+                Menú
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="sidebar-section-title">General</div>
+            <a href="{% url 'dashboard_redirect' %}" class="sidebar-link {% if 'dashboard' in request.path %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i> Panel de control
+            </a>
+
+            <div class="sidebar-section-title">Administración</div>
+            <a href="{% url 'personal:functionary_list' %}" class="sidebar-link {% if 'functionaries' in request.path %}active{% endif %}">
+                <i class="bi bi-people-fill"></i> Funcionarios
+            </a>
+            <a href="{% url 'personal:delegation_list' %}" class="sidebar-link {% if 'delegations' in request.path %}active{% endif %}">
+                <i class="bi bi-geo-alt-fill"></i> Delegaciones
+            </a>
+
+            <div class="sidebar-section-title">Gestión</div>
+            <a href="{% url 'agenda:commitment_list' %}" class="sidebar-link {% if 'agenda' in request.path %}active{% endif %}">
+                <i class="bi bi-calendar-check-fill"></i> Agenda de compromisos
+            </a>
+            <a href="{% url 'activities:activity_list' %}" class="sidebar-link {% if 'activities' in request.path and 'evidencias' not in request.path %}active{% endif %}">
+                <i class="bi bi-clipboard2-check-fill"></i> Actividades
+            </a>
+            <a href="{% url 'activities:evidence_list' %}" class="sidebar-link {% if 'evidencias' in request.path %}active{% endif %}">
+                <i class="bi bi-file-earmark-image-fill"></i> Evidencias
+            </a>
+        </div>
+    </div>
 
     <div class="container mt-4 page-content">
         {% for message in messages %}
