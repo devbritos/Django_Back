@@ -5,7 +5,8 @@ from personal.models import Functionary, Delegation
 from agenda.models import Commitment
 from activities.models import Activity  # ajusta el nombre real
 from django.utils import timezone
-
+from .calculations import obtener_indicador_funcionario
+from configuration.models import Period
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def admin_dashboard(request):
@@ -21,13 +22,17 @@ def admin_dashboard(request):
 @login_required
 def user_dashboard(request):
     funcionario = getattr(request.user, 'functionary', None)
-
     if funcionario is None:
         return render(request, 'analytics/no_functionary.html')
 
+    period = Period.objects.filter(status=True).order_by('-start_date').first()
+    indicador = obtener_indicador_funcionario(funcionario, period) if period else None
+
     context = {
         'funcionario': funcionario,
-        'mis_compromisos': Commitment.objects.filter(functionary=funcionario),
+        'mis_compromisos': funcionario.commitments.all(),
+        'period': period,
+        'indicador': indicador,
     }
     return render(request, 'analytics/user_dashboard.html', context)
 
