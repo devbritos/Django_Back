@@ -1,26 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Hola, {{ funcionario.names }}</h2>
-    <p class="text-muted">{{ funcionario.position.name }} — {{ funcionario.delegation.name }}</p>
+<h2>Hola, {{ funcionario.names }}</h2>
+<p class="text-muted">{{ funcionario.position.name }} — {{ funcionario.delegation.name }}</p>
 
-    <h4 class="mt-5">Mis compromisos</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr><th>Solicitante</th><th>Territorio</th><th>Fecha</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            {% for c in mis_compromisos %}
-            <tr>
-                <td>{{ c.applic_name }}</td>
-                <td>{{ c.territory }}</td>
-                <td>{{ c.commitment_date }}</td>
-                <td>{{ c.get_state_display }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-center text-muted">Sin compromisos registrados</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<h4 class="mt-5">Mis compromisos</h4>
+<table class="table table-striped">
+    <thead>
+        <tr><th>Solicitante</th><th>Territorio</th><th>Fecha</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+        {% for c in mis_compromisos %}
+        <tr>
+            <td>{{ c.applic_name }}</td>
+            <td>{{ c.territory }}</td>
+            <td>{{ c.commitment_date }}</td>
+            <td>{{ c.get_state_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">Sin compromisos registrados</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if indicador %}
+<h4 class="mt-5">Mi avance — {{ period }}</h4>
+<table class="table table-striped">
+    <thead>
+        <tr><th>Ítem</th><th>Meta</th><th>Avance</th><th>% Cumplimiento</th><th>Ponderador</th><th>Aporte</th><th>Semáforo</th></tr>
+    </thead>
+    <tbody>
+        {% for item in indicador.items %}
+        <tr>
+            <td>{{ item.measuring }}</td>
+            <td>{{ item.meta }}</td>
+            <td>{{ item.avance }}</td>
+            <td>{{ item.porcentaje_cumplimiento }}%</td>
+            <td>{{ item.ponderador }}%</td>
+            <td>{{ item.cumplimiento_ponderado }}%</td>
+            <td>
+                {% if item.semaforo == 'verde' %}<span class="badge bg-success">Verde</span>
+                {% elif item.semaforo == 'ambar' %}<span class="badge bg-warning text-dark">Ámbar</span>
+                {% else %}<span class="badge bg-danger">Rojo</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="fw-bold"><td colspan="5">Total ponderado</td><td colspan="2">{{ indicador.total_ponderado }}%</td></tr>
+    </tfoot>
+</table>
+{% else %}
+<p class="text-muted mt-4">No hay un período activo configurado todavía.</p>
+{% endif %}
 {% endblock %}
