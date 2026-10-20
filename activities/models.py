@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from core.models import BaseModel
+from django.core.validators import FileExtensionValidator
 
 
 class Activity(BaseModel):
@@ -46,7 +47,7 @@ class Evidence(BaseModel):
         default=Validity.PENDING,
     )
     date_validity = models.DateField(null=True, blank=True)
-    observations_validity = models.TextField(blank=True)
+    observations_validity = models.ImageField(("max_length=120"), upload_to="devices/images/%Y/%m/", height_field=None, width_field=None, max_length=None, blank=True)
 
     verificator = models.ForeignKey(
         'personal.Functionary',
