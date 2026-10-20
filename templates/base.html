@@ -247,6 +247,9 @@
             <a href="{% url 'activities:evidence_list' %}" class="sidebar-link {% if 'evidencias' in request.path %}active{% endif %}">
                 <i class="bi bi-file-earmark-image-fill"></i> Evidencias
             </a>
+            <a href="{% url 'configuration:goal_list' %}" class="sidebar-link {% if 'metas' in request.path %}active{% endif %}">
+                <i class="bi bi-bar-chart-fill"></i> Ponderaciones
+            </a>
         </div>
     </div>
 

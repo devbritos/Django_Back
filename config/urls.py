@@ -11,4 +11,5 @@ urlpatterns = [
     path("dashboard/", include("analytics.urls")),
     path("activities/", include("activities.urls")),
     path("agenda/", include("agenda.urls")),
+    path("configuration/", include("configuration.urls")),
 ]
