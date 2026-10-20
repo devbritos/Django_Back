@@ -14,7 +14,7 @@
                 <div class="alert alert-warning">
                     Se quitarán también los roles que tenga asignados. Esta acción no se puede deshacer.
                 </div>
-                <form method="post" class="d-flex gap-2">
+                <form method="post" class="d-flex gap-2" data-swal-confirm data-swal-title="¿Eliminar este funcionario?" data-swal-text="Confirma que deseas eliminar este registro.">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Sí, eliminar</button>
                     <a href="{% url 'personal:functionary_list' %}" class="btn btn-outline-secondary">Cancelar</a>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Quitar rol de funcionario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-warning">
+            <div class="card-header text-bg-warning">
+                <h1 class="h5 mb-0">Quitar rol</h1>
+            </div>
+            <div class="card-body">
+                <p>
+                    ¿Quieres quitar el rol <strong>{{ object.role.role_name }}</strong>
+                    de <strong>{{ object.functionary.names }} {{ object.functionary.lastnames }}</strong>?
+                </p>
+                <form method="post" class="d-flex gap-2" data-swal-confirm data-swal-title="¿Quitar este rol?" data-swal-text="Se eliminará la asignación del rol a este funcionario.">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">Sí, quitar rol</button>
+                    <a href="{% url 'personal:functionary_role_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

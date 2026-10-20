@@ -48,7 +48,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-En Linux o Mac: `cp .env.example .env`. Después se abre `.env` y se completan los valores (ver la sección siguiente).
+En Linux o Mac: `cp .env.example .env`. Después se abre `.env` y se completan los valores. Genera una `SECRET_KEY` nueva y única antes de iniciar el proyecto; no uses el valor de ejemplo en producción.
 
 5. Revisar el proyecto y aplicar las migraciones:
 
@@ -82,8 +82,11 @@ La configuración sensible no está en el código, `settings.py` la lee desde `.
 | ALLOWED_HOSTS | Hosts permitidos | 127.0.0.1,localhost |
 | DB_ENGINE | Motor de base de datos | django.db.backends.sqlite3 |
 | DB_NAME | Nombre o ruta de la base | db.sqlite3 |
+| TEST_USERNAME | Usuario para `test_redirect.py` | una cuenta de prueba dedicada |
+| TEST_PASSWORD | Contraseña para `test_redirect.py` | contraseña de esa cuenta de prueba |
 
 Para usar otro motor (por ejemplo PostgreSQL) se cambian `DB_ENGINE` y `DB_NAME` y se agregan `DB_USER`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`, sin tocar el código.
+`test_redirect.py` lee `TEST_USERNAME` y `TEST_PASSWORD` desde `.env` o variables de entorno para iniciar sesión en el servidor local; usa una cuenta de prueba no privilegiada y nunca credenciales de producción.
 
 ## Cuentas de prueba
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Desactivar cargo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-warning">
+            <div class="card-header text-bg-warning">
+                <h1 class="h5 mb-0">Desactivar cargo</h1>
+            </div>
+            <div class="card-body">
+                <p>¿Quieres desactivar el cargo <strong>{{ object.name }}</strong>?</p>
+                <div class="alert alert-info">
+                    El cargo se conservará y seguirá asociado a los funcionarios actuales. Puedes reactivarlo desde el formulario de edición.
+                </div>
+                <form method="post" class="d-flex gap-2" data-swal-confirm data-swal-title="¿Desactivar este cargo?" data-swal-text="El cargo quedará inactivo y ya no estará disponible para nuevas asignaciones.">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">Sí, desactivar</button>
+                    <a href="{% url 'personal:position_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

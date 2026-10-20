@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Roles de funcionarios{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1">Roles de funcionarios</h1>
+        <p class="text-muted mb-0">Consulta y administra los roles asignados.</p>
+    </div>
+    {% if perms.personal.add_functionaryrole %}
+    <a href="{% url 'personal:functionary_role_create' %}" class="btn btn-primary" data-modal-form>
+        <i class="bi bi-plus-lg me-1"></i>Asignar rol
+    </a>
+    {% endif %}
+</div>
+
+<form method="get" class="card card-body mb-3" data-live-search>
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label" for="role-search">Buscar</label>
+            <input type="search" class="form-control" id="role-search" name="q" value="{{ request.GET.q }}" placeholder="Funcionario, delegación, cargo o rol" data-live-search-input autocomplete="off">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="functionary-filter">Filtrar por funcionario</label>
+            <select class="form-select" id="functionary-filter" name="functionary" data-live-search-filter>
+                <option value="">Todos</option>
+                {% for functionary in functionaries %}
+                <option value="{{ functionary.pk }}" {% if request.GET.functionary == functionary.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ functionary.names }} {{ functionary.lastnames }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="role-filter">Filtrar por rol</label>
+            <select class="form-select" id="role-filter" name="role" data-live-search-filter>
+                <option value="">Todos</option>
+                {% for role in roles %}
+                <option value="{{ role.pk }}" {% if request.GET.role == role.pk|stringformat:"s" %}selected{% endif %}>{{ role.role_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary">Filtrar</button>
+            <a href="{% url 'personal:functionary_role_list' %}" class="btn btn-outline-secondary">Limpiar</a>
+            <a href="{% url 'personal:functionary_role_export' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success" title="Exportar resultados a Excel" aria-label="Exportar roles a Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+            </a>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Funcionario</th>
+                    <th>Delegación</th>
+                    <th>Rol</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in object_list %}
+                <tr>
+                    <td>{{ assignment.functionary.names }} {{ assignment.functionary.lastnames }}</td>
+                    <td>{{ assignment.functionary.delegation.name }}</td>
+                    <td><span class="badge text-bg-secondary">{{ assignment.role.role_name }}</span></td>
+                    <td class="text-end">
+                        {% if perms.personal.delete_functionaryrole %}
+                        <form method="post" action="{% url 'personal:functionary_role_delete' assignment.pk %}" class="d-inline" data-swal-confirm data-swal-title="¿Quitar este rol?" data-swal-text="Se eliminará la asignación del rol a este funcionario.">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-person-dash me-1"></i>Quitar rol
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">No hay roles asignados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-3" aria-label="Paginación de roles de funcionarios">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

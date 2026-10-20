@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar rol{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header text-bg-danger">
+                <h1 class="h5 mb-0">Eliminar rol</h1>
+            </div>
+            <div class="card-body">
+                <p>¿Seguro que quieres eliminar el rol <strong>{{ object.role_name }}</strong>?</p>
+                <div class="alert alert-warning">
+                    Los roles asignados a funcionarios no se pueden eliminar.
+                </div>
+                <form method="post" class="d-flex gap-2" data-swal-confirm data-swal-title="¿Eliminar este rol?" data-swal-text="Solo se puede eliminar si no está asignado a funcionarios.">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                    <a href="{% url 'personal:role_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

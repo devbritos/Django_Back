@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>{% if object %}Editar{% else %}Nueva{% endif %} actividad</h2>
-<form method="post">
+<form method="post" id="modal-form-content">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-primary">Guardar</button>

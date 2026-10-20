@@ -1,9 +1,25 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 
 {% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} funcionario{% endblock %}
 
 {% block content %}
+<style>
+    .crud-form input,
+    .crud-form select {
+        display: block;
+        width: 100%;
+        padding: .375rem .75rem;
+        border: 1px solid #dee2e6;
+        border-radius: .375rem;
+        background-color: #fff;
+    }
+    .crud-form input:focus,
+    .crud-form select:focus {
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
+    }
+</style>
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card shadow-sm">
@@ -11,9 +27,45 @@
                 <h1 class="h5 mb-0">{% if object %}Editar{% else %}Nuevo{% endif %} funcionario</h1>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" class="crud-form" id="modal-form-content">
                     {% csrf_token %}
-                    {{ form|crispy }}
+                    {% for error in form.non_field_errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endfor %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.names.id_for_label }}">Nombres</label>
+                        {{ form.names }}
+                        {% for error in form.names.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.lastnames.id_for_label }}">Apellidos</label>
+                        {{ form.lastnames }}
+                        {% for error in form.lastnames.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.delegation.id_for_label }}">Delegación</label>
+                        <select name="{{ form.delegation.html_name }}" id="{{ form.delegation.id_for_label }}" class="form-select" required>
+                            <option value="" {% if not form.delegation.value %}selected{% endif %}></option>
+                            {% for value, label in form.delegation.field.choices %}
+                            {% if value %}
+                            <option value="{{ value }}" {% if form.delegation.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        {% for error in form.delegation.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.position.id_for_label }}">Cargo</label>
+                        <select name="{{ form.position.html_name }}" id="{{ form.position.id_for_label }}" class="form-select" required>
+                            <option value="" {% if not form.position.value %}selected{% endif %}></option>
+                            {% for value, label in form.position.field.choices %}
+                            {% if value %}
+                            <option value="{{ value }}" {% if form.position.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        {% for error in form.position.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
                     <div class="d-flex gap-2 mt-3">
                         <button type="submit" class="btn btn-primary">Guardar</button>
                         <a href="{% url 'personal:functionary_list' %}" class="btn btn-outline-secondary">Cancelar</a>

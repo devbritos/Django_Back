@@ -9,7 +9,7 @@ def calcular_avance(functionary, measuring, period):
     return Activity.objects.filter(
         functionary=functionary,
         measuring=measuring,
-        validation_state='APPROVED',
+        state_validity='APPROVED',
         date__gte=period.start_date,
         date__lte=period.end_date,
     ).count()

@@ -13,16 +13,14 @@ from decouple import config, Csv
 from pathlib import Path
 import os
 from django.contrib.messages import constants as messages
-from dotenv import load_dotenv 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')  # Forzar la lectura del archivo .env
  
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
  
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&kn^$u$y^d**)8lq3=pq(wawhl6=n2f_2gz#+*k=!tvtf7*37_'
+# Set a unique secret in the environment; never use the example value in production.
+SECRET_KEY = config('SECRET_KEY')
  
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -74,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.delegation_context',
             ],
         },
     },
@@ -86,14 +85,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-    # Producción (AWS con MariaDB)
+    # SQLite is the local default; set DB_ENGINE and DB_NAME to use another database.
 DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': config('DB_NAME'),
-            'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST'),
+            'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+            'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
+            'USER': config('DB_USER', default=''),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default=''),
             'PORT': config('DB_PORT', default='3306'),
         }
     }

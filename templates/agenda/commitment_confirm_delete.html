@@ -2,7 +2,7 @@
 {% block content %}
 <h2>¿Eliminar este compromiso?</h2>
 <p>{{ object.applic_name }} — {{ object.commitment_date }}</p>
-<form method="post">
+<form method="post" data-swal-confirm data-swal-title="¿Eliminar este compromiso?" data-swal-text="Confirma que deseas eliminar este compromiso.">
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Sí, eliminar</button>
     <a href="{% url 'agenda:commitment_list' %}" class="btn btn-outline-secondary">Cancelar</a>

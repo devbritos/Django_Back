@@ -19,6 +19,9 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f5f3f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Navbar superior */
@@ -65,6 +68,14 @@
         }
         .user-menu .dropdown-item.text-danger:hover {
             background-color: #fdecea;
+        }
+        .delegation-switcher {
+            color: #fff;
+        }
+        .delegation-switcher .form-select {
+            width: auto;
+            min-width: 190px;
+            max-width: 260px;
         }
 
         /* Sidebar / Offcanvas */
@@ -134,6 +145,7 @@
 
         /* Contenido */
         .page-content {
+            flex: 1 0 auto;
             animation: fadeInUp 0.4s ease both;
         }
 
@@ -174,6 +186,7 @@
             background-color: #2b2420;
             color: #c9c2bb;
             font-size: 0.85rem;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -191,6 +204,25 @@
             </a>
 
             {% if user.is_authenticated %}
+            <div class="delegation-switcher me-3">
+                {% if can_select_delegation %}
+                <form method="post" action="{% url 'personal:select_delegation' %}" class="d-flex align-items-center gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <label class="small text-nowrap" for="active-delegation">Delegación</label>
+                    <select class="form-select form-select-sm" id="active-delegation" name="delegation" onchange="this.form.submit()">
+                        <option value="" {% if viewing_all_delegations %}selected{% endif %}>Todas las delegaciones</option>
+                        {% for delegation in delegation_choices %}
+                        <option value="{{ delegation.pk }}" {% if current_delegation.pk == delegation.pk %}selected{% endif %}>{{ delegation.name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% else %}
+                <span class="small text-nowrap">
+                    Delegación: {{ current_delegation.name|default:"Sin delegación asignada" }}
+                </span>
+                {% endif %}
+            </div>
             <div class="dropdown user-menu">
                 <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-person-circle me-2"></i>
@@ -229,6 +261,7 @@
                 <i class="bi bi-speedometer2"></i> Panel de control
             </a>
 
+            {% if can_select_delegation %}
             <div class="sidebar-section-title">Administración</div>
             <a href="{% url 'personal:functionary_list' %}" class="sidebar-link {% if 'functionaries' in request.path %}active{% endif %}">
                 <i class="bi bi-people-fill"></i> Funcionarios
@@ -236,6 +269,20 @@
             <a href="{% url 'personal:delegation_list' %}" class="sidebar-link {% if 'delegations' in request.path %}active{% endif %}">
                 <i class="bi bi-geo-alt-fill"></i> Delegaciones
             </a>
+            <a href="{% url 'personal:position_list' %}" class="sidebar-link {% if 'positions' in request.path %}active{% endif %}">
+                <i class="bi bi-briefcase-fill"></i> Cargos
+            </a>
+            {% if perms.personal.view_role %}
+            <a href="{% url 'personal:role_list' %}" class="sidebar-link {% if request.path == '/personal/roles/' %}active{% endif %}">
+                <i class="bi bi-person-badge-fill"></i> Roles
+            </a>
+            {% endif %}
+            {% if perms.personal.view_functionaryrole %}
+            <a href="{% url 'personal:functionary_role_list' %}" class="sidebar-link {% if 'functionary-roles' in request.path %}active{% endif %}">
+                <i class="bi bi-person-lines-fill"></i> Roles de funcionarios
+            </a>
+            {% endif %}
+            {% endif %}
 
             <div class="sidebar-section-title">Gestión</div>
             <a href="{% url 'agenda:commitment_list' %}" class="sidebar-link {% if 'agenda' in request.path %}active{% endif %}">
@@ -267,6 +314,209 @@
         </div>
     </footer>
 
+    <div class="modal fade" id="crudFormModal" tabindex="-1" aria-labelledby="crudFormModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="crudFormModalTitle">Formulario</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="crudFormModalBody">
+                    <div class="text-center py-4" role="status">
+                        <span class="spinner-border text-primary" aria-hidden="true"></span>
+                        <span class="visually-hidden">Cargando formulario…</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll("form[data-live-search]").forEach((form) => {
+            let timer;
+            const delay = Number(form.dataset.liveSearchDelay || 350);
+
+            form.querySelectorAll("[data-live-search-input]").forEach((input) => {
+                input.addEventListener("input", () => {
+                    window.clearTimeout(timer);
+                    timer = window.setTimeout(() => form.requestSubmit(), delay);
+                });
+            });
+
+            form.querySelectorAll("[data-live-search-filter]").forEach((filter) => {
+                filter.addEventListener("change", () => form.requestSubmit());
+            });
+        });
+
+        const crudModalElement = document.getElementById("crudFormModal");
+        const crudModal = new bootstrap.Modal(crudModalElement);
+        const crudModalTitle = document.getElementById("crudFormModalTitle");
+        const crudModalBody = document.getElementById("crudFormModalBody");
+
+        function showCrudError(message) {
+            let alert = crudModalBody.querySelector("[data-crud-error]");
+            if (!alert) {
+                alert = document.createElement("div");
+                alert.className = "alert alert-danger";
+                alert.setAttribute("role", "alert");
+                alert.dataset.crudError = "true";
+                crudModalBody.prepend(alert);
+            }
+            alert.textContent = message;
+        }
+
+        async function loadCrudForm(url) {
+            crudModalTitle.textContent = "Cargando formulario";
+            crudModalBody.innerHTML = '<div class="text-center py-4" role="status"><span class="spinner-border text-primary" aria-hidden="true"></span><span class="visually-hidden">Cargando formulario…</span></div>';
+            crudModal.show();
+
+            try {
+                const response = await fetch(url, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+                const html = await response.text();
+                const documentPage = new DOMParser().parseFromString(html, "text/html");
+                const formContent = documentPage.querySelector("#modal-form-content");
+
+                if (!response.ok || !formContent) {
+                    throw new Error(`No se pudo cargar el formulario (HTTP ${response.status}).`);
+                }
+
+                const embeddedForm = formContent.matches("form")
+                    ? formContent
+                    : formContent.querySelector("form");
+                if (embeddedForm && !embeddedForm.hasAttribute("action")) {
+                    embeddedForm.action = url;
+                }
+                const pageTitle = documentPage.querySelector(".card-header h1, h1, h2");
+                crudModalTitle.textContent = pageTitle?.textContent.trim() || "Formulario";
+                crudModalBody.innerHTML = formContent.outerHTML;
+                crudModalBody.querySelectorAll("a").forEach((link) => {
+                    if (link.textContent.trim().toLowerCase() === "cancelar") {
+                        link.href = "#";
+                        link.dataset.closeCrudModal = "true";
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+                crudModalTitle.textContent = "No se pudo abrir el formulario";
+                crudModalBody.innerHTML = "";
+                showCrudError("Ocurrió un problema al cargar el formulario. Cierra esta ventana e inténtalo nuevamente.");
+            }
+        }
+
+        document.addEventListener("click", (event) => {
+            const modalLink = event.target.closest("[data-modal-form]");
+            if (modalLink) {
+                event.preventDefault();
+                loadCrudForm(modalLink.href);
+                return;
+            }
+
+            const cancelLink = event.target.closest("[data-close-crud-modal]");
+            if (cancelLink) {
+                event.preventDefault();
+                crudModal.hide();
+            }
+        });
+
+        document.addEventListener("submit", async (event) => {
+            const deleteForm = event.target.closest("form[data-swal-confirm]");
+            if (deleteForm) {
+                event.preventDefault();
+                const options = {
+                    title: deleteForm.dataset.swalTitle || "¿Confirmas esta acción?",
+                    text: deleteForm.dataset.swalText || "Esta acción no se puede deshacer.",
+                    icon: deleteForm.dataset.swalIcon || "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#9e2a2b",
+                    cancelButtonColor: "#6c757d",
+                    confirmButtonText: deleteForm.dataset.swalConfirmText || "Sí, continuar",
+                    cancelButtonText: "Cancelar",
+                    reverseButtons: true
+                };
+                const confirmed = window.Swal
+                    ? (await Swal.fire(options)).isConfirmed
+                    : window.confirm(`${options.title}\n${options.text}`);
+                if (confirmed) {
+                    deleteForm.submit();
+                }
+                return;
+            }
+
+            const modalForm = event.target.closest("#crudFormModal form");
+            if (!modalForm) {
+                return;
+            }
+
+            event.preventDefault();
+            const submitButton = modalForm.querySelector('[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+
+            try {
+                const response = await fetch(modalForm.action, {
+                    method: modalForm.method || "POST",
+                    body: new FormData(modalForm),
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+
+                if (response.redirected) {
+                    const html = await response.text();
+                    const documentPage = new DOMParser().parseFromString(html, "text/html");
+                    const successAlert = documentPage.querySelector(".alert-success");
+                    const successMessage = successAlert?.textContent.trim()
+                        || modalForm.dataset.swalSuccess
+                        || "Los cambios se guardaron correctamente.";
+
+                    if (window.Swal) {
+                        await Swal.fire({
+                            icon: "success",
+                            title: "¡Guardado con éxito!",
+                            text: successMessage,
+                            confirmButtonColor: "#9e2a2b",
+                            confirmButtonText: "Aceptar"
+                        });
+                    } else {
+                        window.alert(successMessage);
+                    }
+                    window.location.assign(response.url);
+                    return;
+                }
+
+                const html = await response.text();
+                const documentPage = new DOMParser().parseFromString(html, "text/html");
+                const updatedForm = documentPage.querySelector("#modal-form-content");
+                if (response.ok && updatedForm) {
+                    const embeddedForm = updatedForm.matches("form")
+                        ? updatedForm
+                        : updatedForm.querySelector("form");
+                    if (embeddedForm && !embeddedForm.hasAttribute("action")) {
+                        embeddedForm.action = modalForm.action;
+                    }
+                    crudModalBody.innerHTML = updatedForm.outerHTML;
+                    crudModalBody.querySelectorAll("a").forEach((link) => {
+                        if (link.textContent.trim().toLowerCase() === "cancelar") {
+                            link.href = "#";
+                            link.dataset.closeCrudModal = "true";
+                        }
+                    });
+                } else {
+                    showCrudError(`No se pudo guardar el formulario (HTTP ${response.status}). Revisa la información e inténtalo nuevamente.`);
+                }
+            } catch (error) {
+                console.error(error);
+                showCrudError("No se pudo enviar el formulario por un problema de conexión. Inténtalo nuevamente.");
+            } finally {
+                const currentSubmitButton = crudModalBody.querySelector('#modal-form-content [type="submit"]');
+                if (currentSubmitButton) {
+                    currentSubmitButton.disabled = false;
+                }
+            }
+        });
+    </script>
 </body>
 </html>

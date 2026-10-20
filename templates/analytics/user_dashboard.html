@@ -1,10 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Hola, {{ funcionario.names }}</h2>
-<p class="text-muted">{{ funcionario.position.name }} — {{ funcionario.delegation.name }}</p>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Mi panel</h1>
+        <p class="text-muted mb-0">
+            Hola, {{ funcionario.names }} · {{ funcionario.position.name }} · {{ funcionario.delegation.name }}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" href="{% url 'agenda:commitment_list' %}">
+            <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>Ver agenda
+        </a>
+        <a class="btn btn-primary" href="{% url 'activities:activity_list' %}">
+            <i class="bi bi-clipboard2-check me-1" aria-hidden="true"></i>Ver actividades
+        </a>
+    </div>
+</div>
 
-<h4 class="mt-5">Mis compromisos</h4>
-<table class="table table-striped">
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted mb-1">Compromisos registrados</p>
+            <p class="h3 mb-0">{{ compromisos_total }}</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted mb-1">Pendientes</p>
+            <p class="h3 mb-0">{{ compromisos_pendientes }}</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted mb-1">Compromisos vencidos</p>
+            <p class="h3 mb-0 {% if compromisos_vencidos %}text-danger{% endif %}">{{ compromisos_vencidos }}</p>
+        </div></div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100"><div class="card-body">
+            <p class="text-muted mb-1">Avance ponderado{% if period %} · {{ period }}{% endif %}</p>
+            <p class="h3 mb-0">{% if indicador %}{{ indicador.total_ponderado }}%{% else %}—{% endif %}</p>
+        </div></div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Mis compromisos</h2>
+        <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
     <thead>
         <tr><th>Solicitante</th><th>Territorio</th><th>Fecha</th><th>Estado</th></tr>
     </thead>
@@ -20,11 +64,27 @@
         <tr><td colspan="4" class="text-center text-muted">Sin compromisos registrados</td></tr>
         {% endfor %}
     </tbody>
-</table>
+        </table>
+        </div>
+    </div>
+</div>
 
+<div class="card">
+    <div class="card-body">
 {% if indicador %}
-<h4 class="mt-5">Mi avance — {{ period }}</h4>
-<table class="table table-striped">
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+        <h2 class="h5 mb-1">Semáforo de cumplimiento</h2>
+        <p class="text-muted mb-0">Avance de mis metas para el período {{ period }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <span class="badge bg-success">Verde: {{ semaforos.verde }}</span>
+        <span class="badge bg-warning text-dark">Ámbar: {{ semaforos.ambar }}</span>
+        <span class="badge bg-danger">Rojo: {{ semaforos.rojo }}</span>
+    </div>
+</div>
+<div class="table-responsive">
+<table class="table table-striped align-middle mb-0">
     <thead>
         <tr><th>Ítem</th><th>Meta</th><th>Avance</th><th>% Cumplimiento</th><th>Ponderador</th><th>Aporte</th><th>Semáforo</th></tr>
     </thead>
@@ -49,7 +109,11 @@
         <tr class="fw-bold"><td colspan="5">Total ponderado</td><td colspan="2">{{ indicador.total_ponderado }}%</td></tr>
     </tfoot>
 </table>
+    </div>
 {% else %}
-<p class="text-muted mt-4">No hay un período activo configurado todavía.</p>
+<h2 class="h5">Semáforo de cumplimiento</h2>
+<p class="text-muted mb-0">No hay un período activo configurado todavía.</p>
 {% endif %}
+    </div>
+</div>
 {% endblock %}

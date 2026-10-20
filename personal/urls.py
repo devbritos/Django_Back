@@ -5,20 +5,24 @@ from . import views
 app_name = "personal"
 
 urlpatterns = [
+    path("delegations/select/", views.select_delegation, name="select_delegation"),
     # Delegation
     path("delegations/", views.delegation_list, name="delegation_list"),
+    path("delegations/export/", views.delegation_export, name="delegation_export"),
     path("delegations/new/", views.delegation_create, name="delegation_create"),
     path("delegations/<int:pk>/edit/", views.delegation_update, name="delegation_update"),
     path("delegations/<int:pk>/delete/", views.delegation_delete, name="delegation_delete"),
 
     # Position
     path("positions/", views.position_list, name="position_list"),
+    path("positions/export/", views.position_export, name="position_export"),
     path("positions/new/", views.position_create, name="position_create"),
     path("positions/<int:pk>/edit/", views.position_update, name="position_update"),
     path("positions/<int:pk>/delete/", views.position_delete, name="position_delete"),
 
     # Functionary
     path("functionaries/", views.functionary_list, name="functionary_list"),
+    path("functionaries/export/", views.functionary_export, name="functionary_export"),
     path("functionaries/new/", views.functionary_create, name="functionary_create"),
     path("functionaries/<int:pk>/edit/", views.functionary_update, name="functionary_update"),
     path("functionaries/<int:pk>/delete/", views.functionary_delete, name="functionary_delete"),
@@ -31,6 +35,7 @@ urlpatterns = [
 
     # FunctionaryRole
     path("functionary-roles/", views.functionary_role_list, name="functionary_role_list"),
+    path("functionary-roles/export/", views.functionary_role_export, name="functionary_role_export"),
     path("functionary-roles/new/", views.functionary_role_create, name="functionary_role_create"),
     path("functionary-roles/<int:pk>/delete/", views.functionary_role_delete, name="functionary_role_delete"),
 ]

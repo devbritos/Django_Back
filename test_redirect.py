@@ -1,6 +1,9 @@
+from decouple import config
 import requests
 
 BASE = "http://127.0.0.1:8000"
+TEST_USERNAME = config("TEST_USERNAME")
+TEST_PASSWORD = config("TEST_PASSWORD")
 session = requests.Session()
 
 # 1. Obtener el CSRF token de la página de login
@@ -11,8 +14,8 @@ csrf_token = session.cookies.get('csrftoken')
 resp = session.post(
     f"{BASE}/accounts/login/",
     data={
-        "username": "admin_sgr",
-        "password": "Ventana$123",
+        "username": TEST_USERNAME,
+        "password": TEST_PASSWORD,
         "csrfmiddlewaretoken": csrf_token,
     },
     headers={"Referer": f"{BASE}/accounts/login/"},

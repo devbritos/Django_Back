@@ -6,3 +6,4 @@ django-crispy-forms>=2.3
 crispy-bootstrap5>=2024.10
 python-decouple
 gunicorn
+openpyxl>=3.1.5

@@ -7,11 +7,33 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
+from core.delegation_scope import scope_queryset
+from personal.models import Functionary
+
 from .models import Commitment
 from .forms import CommitmentForm
 
 
-class CommitmentListView(LoginRequiredMixin, ListView):
+class DelegationScopedView:
+    def get_queryset(self):
+        return scope_queryset(
+            self.request,
+            super().get_queryset(),
+            lookup='functionary__delegation_id',
+        )
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if 'functionary' in form.fields:
+            form.fields['functionary'].queryset = scope_queryset(
+                self.request,
+                Functionary.objects.all(),
+                lookup='delegation_id',
+            )
+        return form
+
+
+class CommitmentListView(DelegationScopedView, LoginRequiredMixin, ListView):
     model = Commitment
     template_name = 'agenda/commitment_list.html'
     context_object_name = 'commitments'
@@ -32,7 +54,7 @@ class CommitmentListView(LoginRequiredMixin, ListView):
         return context
 
 
-class CommitmentCreateView(LoginRequiredMixin, CreateView):
+class CommitmentCreateView(DelegationScopedView, LoginRequiredMixin, CreateView):
     model = Commitment
     form_class = CommitmentForm
     template_name = 'agenda/commitment_form.html'
@@ -43,7 +65,7 @@ class CommitmentCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class CommitmentUpdateView(LoginRequiredMixin, UpdateView):
+class CommitmentUpdateView(DelegationScopedView, LoginRequiredMixin, UpdateView):
     model = Commitment
     form_class = CommitmentForm
     template_name = 'agenda/commitment_form.html'
@@ -54,7 +76,7 @@ class CommitmentUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class CommitmentDeleteView(LoginRequiredMixin, DeleteView):
+class CommitmentDeleteView(DelegationScopedView, LoginRequiredMixin, DeleteView):
     model = Commitment
     template_name = 'agenda/commitment_confirm_delete.html'
     success_url = reverse_lazy('agenda:commitment_list')

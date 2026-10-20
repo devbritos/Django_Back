@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Desactivar delegación{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header text-bg-danger">
+                <h1 class="h5 mb-0">Desactivar delegación</h1>
+            </div>
+            <div class="card-body">
+                <p>¿Seguro que quieres desactivar la delegación <strong>{{ object.name }}</strong>?</p>
+                <div class="alert alert-warning">
+                    La delegación no se eliminará y podrás reactivarla editando su estado.
+                </div>
+                <form method="post" class="d-flex gap-2" data-swal-confirm data-swal-title="¿Desactivar esta delegación?" data-swal-text="La delegación quedará inactiva.">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, desactivar</button>
+                    <a href="{% url 'personal:delegation_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

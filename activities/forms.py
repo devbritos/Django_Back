@@ -25,9 +25,21 @@ class ActivityForm(forms.ModelForm):
 class EvidenceForm(forms.ModelForm):
     class Meta:
         model = Evidence
-        fields = ['name', 'file', 'metadata', 'activity', 'functionary']
+        fields = [
+            'name',
+            'author',
+            'date_evidence',
+            'file',
+            'metadata',
+            'activity',
+            'functionary',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'author': forms.TextInput(attrs={'class': 'form-control'}),
+            'date_evidence': forms.DateInput(
+                attrs={'type': 'date', 'class': 'form-control'}
+            ),
             'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'metadata': forms.TextInput(attrs={'class': 'form-control'}),
             'activity': forms.Select(attrs={'class': 'form-select'}),

@@ -12,3 +12,6 @@ urlpatterns = [
     path("activities/", include("activities.urls")),
     path("agenda/", include("agenda.urls")),
 ]
+
+handler403 = "config.views.permission_denied"
+handler404 = "config.views.page_not_found"

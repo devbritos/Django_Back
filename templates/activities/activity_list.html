@@ -2,7 +2,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Actividades</h2>
-    <a href="{% url 'activities:activity_create' %}" class="btn btn-primary">+ Nueva actividad</a>
+    <a href="{% url 'activities:activity_create' %}" class="btn btn-primary" data-modal-form>+ Nueva actividad</a>
 </div>
 <table class="table table-striped">
     <thead>
@@ -17,8 +17,11 @@
             <td>{{ a.measuring }}</td>
             <td>{{ a.state_validity }}</td>
             <td>
-                <a href="{% url 'activities:activity_update' a.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                <a href="{% url 'activities:activity_delete' a.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                <a href="{% url 'activities:activity_update' a.pk %}" class="btn btn-sm btn-outline-secondary" data-modal-form>Editar</a>
+                <form method="post" action="{% url 'activities:activity_delete' a.pk %}" class="d-inline" data-swal-confirm data-swal-title="¿Eliminar esta actividad?" data-swal-text="Confirma que deseas eliminar esta actividad.">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
             </td>
         </tr>
         {% empty %}
