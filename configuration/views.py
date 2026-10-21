@@ -1,9 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib import messages
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
 from django.db.models import Sum
 
 from .models import Goal, Period
+from .forms import GoalForm, PeriodForm
 
 class GoalListView(LoginRequiredMixin, ListView):
     model = Goal
@@ -43,9 +45,13 @@ class GoalListView(LoginRequiredMixin, ListView):
 
 class GoalCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Goal
+    form_class = GoalForm
     template_name = 'configuration/goal_form.html'
-    fields = ['position', 'measuring', 'period', 'weight', 'validity','target_value'] 
     success_url = reverse_lazy('configuration:goal_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Meta registrada correctamente.')
+        return super().form_valid(form)
 
     def test_func(self):
             # 1. Verificamos si el usuario tiene un funcionario asociado
@@ -72,14 +78,13 @@ class GoalCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 class PeriodCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Period
+    form_class = PeriodForm
     template_name = 'configuration/period_form.html'
-    
-    # ATENCIÓN: Revisa tu models.py para confirmar que estos sean los nombres 
-    # exactos de los campos de tu modelo Period. 
-    fields = ['start_date', 'end_date', 'status','minimum_threshold','maximum_computable_days' ] 
-    
-    # Por ahora lo redirigimos a la lista de metas al terminar de guardarlo
     success_url = reverse_lazy('configuration:goal_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Período registrado correctamente.')
+        return super().form_valid(form)
 
     def test_func(self):
         """Bloquea el acceso a quienes no sean Administrador o Coordinador"""
@@ -88,18 +93,3 @@ class PeriodCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
                 role__role_name__in=['Administrador', 'Coordinador']
             ).exists()
         return False
-
-    def form_valid(self, form):
-        # 1. Pausamos el guardado para modificar el objeto
-        period = form.save(commit=False)
-        
-        # 2. Calculamos la diferencia entre las fechas (Término - Inicio)
-        diferencia = period.end_date - period.start_date
-        
-        # 3. Asignamos el resultado al campo computable_days (+1 para incluir el día actual)
-        period.computable_days = diferencia.days + 1 
-        
-        # 4. Ahora sí, guardamos el registro en la base de datos
-        period.save()
-        
-        return super().form_valid(form)

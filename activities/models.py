@@ -85,7 +85,7 @@ class Evidence(BaseModel):
 
     def clean(self):
         super().clean()
-        if self.verificator_id and self.verificator_id == self.funcionary_id:
+        if self.verificator_id and self.verificator_id == self.functionary_id:
             raise ValidationError(
                 {'verificator': 'El verificador no puede ser quien subió la evidencia.'}
             )

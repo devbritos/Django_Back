@@ -113,13 +113,14 @@ class CommitmentCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # Asigna automáticamente al funcionario conectado
-        if hasattr(self.request.user, 'functionary'):
-            form.instance.functionary = self.request.user.functionary
-        
-        messages.success(self.request, 'Compromiso registrado en la Agenda Colectiva.')
-        return super().form_valid(form)
-
-    def form_valid(self, form):
+        functionary = getattr(self.request.user, 'functionary', None)
+        if functionary is None:
+            form.add_error(
+                None,
+                'Tu usuario no tiene un perfil de funcionario asociado.',
+            )
+            return self.form_invalid(form)
+        form.instance.functionary = functionary
         messages.success(self.request, 'Compromiso registrado correctamente.')
         return super().form_valid(form)
 
@@ -139,3 +140,7 @@ class CommitmentDeleteView(LoginRequiredMixin, DeleteView):
     model = Commitment
     template_name = 'agenda/commitment_confirm_delete.html'
     success_url = reverse_lazy('agenda:commitment_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Compromiso eliminado correctamente.')
+        return super().form_valid(form)

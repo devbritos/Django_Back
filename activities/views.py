@@ -63,7 +63,7 @@ class ActivityCreateView(LoginRequiredMixin, CreateView):
 
         # 3. Si la actividad ingresa al tubo de trabajo (RF-07), redirige a crear compromiso
         if getattr(self.object, 'enters_pipe', False):
-            url_compromiso = reverse('commitments:commitment_create')
+            url_compromiso = reverse('agenda:commitment_create')
             return redirect(f'{url_compromiso}?activity_id={self.object.id}')
 
         return response
@@ -74,11 +74,19 @@ class ActivityUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'activities/activity_form.html'
     success_url = reverse_lazy('activities:activity_list')
 
+    def form_valid(self, form):
+        messages.success(self.request, 'Actividad actualizada correctamente.')
+        return super().form_valid(form)
+
 
 class ActivityDeleteView(LoginRequiredMixin, DeleteView):
     model = Activity
     template_name = 'activities/activity_confirm_delete.html'
     success_url = reverse_lazy('activities:activity_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Actividad eliminada correctamente.')
+        return super().form_valid(form)
 
 
 # ---------- Evidence ----------

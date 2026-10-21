@@ -6,7 +6,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-municipal text-white">
                     <h4 class="mb-0">
                         <!-- Cambia el título dinámicamente si estás creando o editando -->
                         {% if object %}Editar Meta{% else %}Crear Nueva Meta{% endif %}
@@ -24,8 +24,8 @@
                             <a href="{% url 'configuration:goal_list' %}" class="btn btn-secondary me-2">
                                 Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> Guardar Meta
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Meta
                             </button>
                         </div>
                     </form>
