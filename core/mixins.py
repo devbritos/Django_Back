@@ -1,0 +1,87 @@
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
+
+
+class FunctionaryRequiredMixin(UserPassesTestMixin):
+    """Verifica que el usuario esté autenticado y posea un perfil de Funcionario activo."""
+
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_authenticated
+            and hasattr(user, 'functionary')
+            and getattr(user.functionary, 'is_active', True)
+        )
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'Tu usuario no posee un perfil de funcionario activo asignado.'
+        )
+
+
+class VerifierRequiredMixin(UserPassesTestMixin):
+    """
+    Permite el acceso a Verificadores, Delegados o Administradores (RF-013).
+    Utilizado para validar actividades y revisar evidencias.
+    """
+
+    def test_func(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return hasattr(user, 'functionary') and user.functionary.is_verifier
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'No tienes permisos de Verificador para validar actividades o evidencias.'
+        )
+
+
+class DelegateRequiredMixin(UserPassesTestMixin):
+    """
+    Permite el acceso a Delegados/Jefaturas, Coordinadores o Administradores.
+    Utilizado para monitoreo de la delegación y reasignación de compromisos.
+    """
+
+    def test_func(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return hasattr(user, 'functionary') and user.functionary.is_delegate
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'Acceso restringido a Delegados de área o Coordinadores del SGR.'
+        )
+
+
+class AdminRequiredMixin(UserPassesTestMixin):
+    """
+    Permite el acceso únicamente a Administradores del Sistema (RF-001, RF-002).
+    Utilizado para configuración de cargos, períodos, metadatos y usuarios.
+    """
+
+    def test_func(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return hasattr(user, 'functionary') and user.functionary.is_admin
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'Se requieren privilegios de Administrador del SGR.'
+        )
