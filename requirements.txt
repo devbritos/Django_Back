@@ -6,3 +6,4 @@ django-crispy-forms>=2.3
 crispy-bootstrap5>=2024.10
 python-decouple
 gunicorn
+mysqlclient>=2.2.7

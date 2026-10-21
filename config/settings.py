@@ -25,7 +25,7 @@ load_dotenv(BASE_DIR / '.env')  # Forzar la lectura del archivo .env
 SECRET_KEY = 'django-insecure-&kn^$u$y^d**)8lq3=pq(wawhl6=n2f_2gz#+*k=!tvtf7*37_'
  
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
  
 
 
@@ -92,9 +92,12 @@ DATABASES = {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': config('DB_NAME'),
             'USER': config('DB_USER'),
-            'PASSWORD': config('DB_PASSWORD'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
             'HOST': config('DB_HOST'),
             'PORT': config('DB_PORT', default='3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
         }
     }
 

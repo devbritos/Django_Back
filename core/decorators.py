@@ -1,4 +1,7 @@
-from django.contrib.auth.decorators import login_required, user_passes_test
+from functools import wraps
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
  
  
 def require(perm):
@@ -13,9 +16,14 @@ def require(perm):
             functionary = getattr(user, 'functionary', None)
             return bool(functionary and functionary.is_admin)
 
-        return login_required(
-            user_passes_test(has_access, raise_exception=True)(view)
-        )
+        @login_required
+        @wraps(view)
+        def wrapped_view(request, *args, **kwargs):
+            if not has_access(request.user):
+                raise PermissionDenied
+            return view(request, *args, **kwargs)
+
+        return wrapped_view
 
     return decorator
  
