@@ -104,10 +104,13 @@ def position_delete(request, pk):
 # ---------- Functionary ----------
 FunctionaryForm = modelform_factory(Functionary, fields=["names", "lastnames", "delegation", "position"])
 
+from .forms import FunctionaryCustomForm
+
+# ---------- Functionary ----------
 
 @require("personal.view_functionary")
 def functionary_list(request):
-    qs = Functionary.objects.select_related("delegation", "position")
+    qs = Functionary.objects.select_related("delegation", "position", "user")
     if delegation := request.GET.get("delegation"):
         qs = qs.filter(delegation_id=delegation)
     if position := request.GET.get("position"):
@@ -122,10 +125,10 @@ def functionary_list(request):
 
 @require("personal.add_functionary")
 def functionary_create(request):
-    form = FunctionaryForm(request.POST or None)
+    form = FunctionaryCustomForm(request.POST or None)
     if form.is_valid():
         form.save()
-        messages.success(request, "Registro creado correctamente.")
+        messages.success(request, "Usuario y funcionario creados correctamente.")
         return redirect("personal:functionary_list")
     return render(request, "personal/functionary_form.html", {"form": form})
 
@@ -133,9 +136,16 @@ def functionary_create(request):
 @require("personal.change_functionary")
 def functionary_update(request, pk):
     obj = get_object_or_404(Functionary, pk=pk)
-    form = FunctionaryForm(request.POST or None, instance=obj)
+    # Para editar datos básicos del funcionario (sin cambiar credenciales)
+    FunctionaryUpdateForm = modelform_factory(Functionary, fields=["names", "lastnames", "delegation", "position"])
+    form = FunctionaryUpdateForm(request.POST or None, instance=obj)
     if form.is_valid():
         form.save()
+        # Sincronizar nombre en User si existe
+        if obj.user:
+            obj.user.first_name = obj.names
+            obj.user.last_name = obj.lastnames
+            obj.user.save(update_fields=["first_name", "last_name"])
         messages.success(request, "Registro actualizado correctamente.")
         return redirect("personal:functionary_list")
     return render(request, "personal/functionary_form.html", {"form": form, "object": obj})
@@ -146,14 +156,15 @@ def functionary_delete(request, pk):
     obj = get_object_or_404(Functionary, pk=pk)
     if request.method == "POST":
         try:
+            user = obj.user
             obj.delete()
-            messages.success(request, "Registro eliminado.")
+            if user:
+                user.delete()  # Elimina también la cuenta de usuario de Django
+            messages.success(request, "Registro y cuenta de usuario eliminados.")
         except ProtectedError:
             messages.error(request, "No se puede eliminar: tiene registros asociados.")
         return redirect("personal:functionary_list")
     return render(request, "personal/functionary_confirm_delete.html", {"object": obj})
-
-
 # ---------- Role ----------
 RoleForm = modelform_factory(Role, fields=["role_name"])
 
@@ -213,24 +224,32 @@ def functionary_role_list(request):
     })
 
 
-@require("personal.add_functionaryrole")
+# ---------- FunctionaryRole (asignar roles a un funcionario) ----------
+FunctionaryRoleForm = modelform_factory(
+    FunctionaryRole, fields=['functionary', 'role']
+)
+
+
+@require('personal.add_functionaryrole')
 def functionary_role_create(request):
-    # Permite abrir el formulario con el funcionario ya elegido: ?functionary=3
-    initial = {"functionary": request.GET.get("functionary")}
-    form = FunctionaryRoleForm(request.POST or None, initial=initial)
-    if form.is_valid():
-        form.save()
-        messages.success(request, "Rol asignado correctamente.")
-        return redirect("personal:functionary_role_list")
-    return render(request, "personal/functionary_role_form.html", {"form": form})
+  initial = {'functionary': request.GET.get('functionary')}
+  form = FunctionaryRoleForm(request.POST or None, initial=initial)
+  if form.is_valid():
+    form.save()
+    messages.success(request, 'Rol asignado correctamente.')
+    # Redirige de vuelta a la lista de funcionarios
+    return redirect('personal:functionary_list')
+  return render(request, 'personal/functionary_role_form.html', {'form': form})
 
 
-# No hay "editar": para cambiar un rol se quita la asignación y se crea otra.
-@require("personal.delete_functionaryrole")
+@require('personal.delete_functionaryrole')
 def functionary_role_delete(request, pk):
-    obj = get_object_or_404(FunctionaryRole, pk=pk)
-    if request.method == "POST":
-        obj.delete()
-        messages.success(request, "Rol quitado.")
-        return redirect("personal:functionary_role_list")
-    return render(request, "personal/functionary_role_confirm_delete.html", {"object": obj})
+  obj = get_object_or_404(FunctionaryRole, pk=pk)
+  if request.method == 'POST':
+    obj.delete()
+    messages.success(request, 'Rol quitado correctamente.')
+    # Redirige de vuelta a la lista de funcionarios
+    return redirect('personal:functionary_list')
+  return render(
+      request, 'personal/functionary_role_confirm_delete.html', {'object': obj}
+  )

@@ -4,12 +4,17 @@ from core.models import BaseModel
 
 
 class Activity(BaseModel):
+    STATE_CHOICES = [
+        ('PENDING', 'Pendiente'),
+        ('VALIDATED', 'Validado'),
+        ('REJECTED', 'Rechazado'),
+    ]
     date = models.DateField()
     application = models.CharField(max_length=100)
     taken_action = models.TextField()
     name_contact = models.CharField(max_length=70)
     telephone_contact = models.CharField(max_length=20)
-    state_validity = models.CharField(max_length=20, default='PENDING')
+    state_validity = models.CharField(max_length=20, choices=STATE_CHOICES, default='PENDING')
     functionary = models.ForeignKey(
         'personal.Functionary',
         on_delete=models.PROTECT
@@ -26,6 +31,17 @@ class Activity(BaseModel):
         blank=True  # Commitment es opcional
     )
 
+    quantity = models.PositiveIntegerField(
+        default=1, 
+        verbose_name="Cantidad / Personas atendidas",
+        help_text="Número de atenciones o ejecuciones realizadas en este registro"
+    )
+
+    enters_pipe = models.BooleanField(
+    default=False,
+    verbose_name="¿Ingresa al Tubo de Trabajo?",
+    help_text="Marcar si esta actividad genera un compromiso futuro con el vecino"
+    )
     def __str__(self):
         return f"{self.date} – {self.application}"
 

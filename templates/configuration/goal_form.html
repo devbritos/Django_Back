@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <!-- Cambia el título dinámicamente si estás creando o editando -->
+                        {% if object %}Editar Meta{% else %}Crear Nueva Meta{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <!-- Token de seguridad obligatorio en Django -->
+                        {% csrf_token %}
+                        
+                        <!-- Aquí se renderizan automáticamente todos los campos con el estilo de Bootstrap -->
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{% url 'configuration:goal_list' %}" class="btn btn-secondary me-2">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Meta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
