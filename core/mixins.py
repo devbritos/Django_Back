@@ -25,6 +25,23 @@ class FunctionaryRequiredMixin(UserPassesTestMixin):
         )
 
 
+class FunctionaryOrStaffRequiredMixin(UserPassesTestMixin):
+    """Permite el acceso a funcionarios activos y administradores de Django."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and (
+            user.is_staff or user.is_superuser or _active_functionary(user) is not None
+        )
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'Se requiere una cuenta administrativa o un perfil de funcionario activo.'
+        )
+
+
 class VerifierRequiredMixin(UserPassesTestMixin):
     """
     Permite el acceso a Verificadores, Delegados o Administradores (RF-013).
@@ -35,7 +52,7 @@ class VerifierRequiredMixin(UserPassesTestMixin):
         user = self.request.user
         if not user.is_authenticated:
             return False
-        if user.is_superuser:
+        if user.is_staff or user.is_superuser:
             return True
         functionary = _active_functionary(user)
         return functionary is not None and functionary.is_verifier

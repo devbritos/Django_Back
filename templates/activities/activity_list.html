@@ -63,7 +63,7 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
-                                {% if user.is_superuser or user.functionary.is_admin or user.functionary.is_delegate or a.functionary_id == user.functionary.id %}
+                                {% if user.is_staff or user.is_superuser or user.functionary.is_admin or user.functionary.is_delegate or a.functionary_id == user.functionary.id %}
                                 <a href="{% url 'activities:activity_update' a.id %}" class="btn btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>

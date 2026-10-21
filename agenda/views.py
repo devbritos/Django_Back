@@ -7,7 +7,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .models import Commitment
 from .forms import CommitmentForm
 from personal.models import Functionary
-from core.mixins import FunctionaryRequiredMixin
+from core.mixins import FunctionaryOrStaffRequiredMixin, FunctionaryRequiredMixin
 
 
 def get_commitment_scope(user):
@@ -15,10 +15,12 @@ def get_commitment_scope(user):
         'functionary',
         'functionary__delegation',
     )
-    if user.is_superuser:
+    if user.is_staff or user.is_superuser:
         return commitments
 
-    functionary = user.functionary
+    functionary = getattr(user, 'functionary', None)
+    if functionary is None:
+        return commitments.none()
     if functionary.is_admin:
         return commitments
     if functionary.is_delegate:
@@ -26,7 +28,7 @@ def get_commitment_scope(user):
     return commitments.filter(functionary=functionary)
 
 
-class CommitmentListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView):
+class CommitmentListView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, ListView):
     model = Commitment
     template_name = 'agenda/commitment_list.html'
     context_object_name = 'commitments'
@@ -59,15 +61,20 @@ class CommitmentListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView)
         today = timezone.localdate()
         context['states'] = Commitment.State.choices
         commitments = get_commitment_scope(self.request.user)
-        if self.request.user.is_superuser or self.request.user.functionary.is_admin:
+        functionary = getattr(self.request.user, 'functionary', None)
+        if (
+            self.request.user.is_staff
+            or self.request.user.is_superuser
+            or (functionary is not None and functionary.is_admin)
+        ):
             context['functionaries'] = Functionary.objects.all()
-        elif self.request.user.functionary.is_delegate:
+        elif functionary is not None and functionary.is_delegate:
             context['functionaries'] = Functionary.objects.filter(
-                delegation=self.request.user.functionary.delegation
+                delegation=functionary.delegation
             )
         else:
             context['functionaries'] = Functionary.objects.filter(
-                pk=self.request.user.functionary.pk
+                pk=functionary.pk
             )
         context['selected_state'] = self.request.GET.get('state', '')
         context['selected_functionary'] = self.request.GET.get('functionary', '')
@@ -111,7 +118,7 @@ class CommitmentCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateV
         return super().form_valid(form)
 
 
-class CommitmentUpdateView(LoginRequiredMixin, FunctionaryRequiredMixin, UpdateView):
+class CommitmentUpdateView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, UpdateView):
     model = Commitment
     form_class = CommitmentForm
     template_name = 'agenda/commitment_form.html'
@@ -125,7 +132,7 @@ class CommitmentUpdateView(LoginRequiredMixin, FunctionaryRequiredMixin, UpdateV
         return super().form_valid(form)
 
 
-class CommitmentDeleteView(LoginRequiredMixin, FunctionaryRequiredMixin, DeleteView):
+class CommitmentDeleteView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, DeleteView):
     model = Commitment
     template_name = 'agenda/commitment_confirm_delete.html'
     success_url = reverse_lazy('agenda:commitment_list')

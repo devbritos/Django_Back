@@ -224,7 +224,7 @@
                 <i class="bi bi-traffic-light-fill"></i> Semáforo
             </a>
             {% endif %}
-            {% if user.functionary %}
+            {% if user.is_staff or user.is_superuser or user.functionary %}
             <a href="{% url 'agenda:commitment_list' %}" class="sidebar-link {% if 'agenda' in request.path or 'commitment' in request.path %}active{% endif %}">
                 <i class="bi bi-calendar-check-fill"></i> Tubo de Trabajo
             </a>

@@ -50,18 +50,13 @@ Este proyecto fue desarrollado para la asignatura Programación Back End (TI3041
    python -m pip install -r requirements.txt
    ```
 
-4. Crea un archivo `.env` en la raíz del proyecto con los datos de conexión a tu base de datos:
+4. Copia el archivo de ejemplo y configura `.env` con los valores de tu entorno:
 
-   ```dotenv
-   DEBUG=True
-   DB_NAME=nombre_de_la_base
-   DB_USER=usuario_mysql
-   DB_PASSWORD=contrasena_mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
+   ```powershell
+   Copy-Item .env.example .env
    ```
 
-   Reemplaza los valores de ejemplo por los de tu entorno. No compartas ni subas el archivo `.env` al repositorio.
+   Genera una clave secreta fuerte con `python -c "import secrets; print(secrets.token_urlsafe(50))"` y copia el resultado en `SECRET_KEY`. Completa las variables de base de datos. En desarrollo puedes poner `DEBUG=True`; en AWS debe quedar `DEBUG=False`. No compartas ni subas `.env` al repositorio.
 
 5. Comprueba la configuración y crea las tablas:
 
@@ -83,6 +78,15 @@ Este proyecto fue desarrollado para la asignatura Programación Back End (TI3041
    ```
 
 Abre `http://127.0.0.1:8000/` para entrar al sistema o `http://127.0.0.1:8000/admin/` para usar el administrador de Django.
+
+## Recuperación de contraseña por correo
+
+La pantalla `¿Olvidaste tu contraseña?` usa las vistas incluidas en Django. El correo solo se envía si existe una cuenta activa con esa dirección registrada.
+
+- Sin `EMAIL_HOST`, Django usa el backend de consola y muestra el mensaje/enlace en la terminal; no llega a una bandeja de entrada.
+- Para enviar correo real, configura en `.env` `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` y `DEFAULT_FROM_EMAIL`. El backend SMTP se selecciona automáticamente al configurar `EMAIL_HOST`.
+- Para Gmail usa `smtp.gmail.com`, puerto `587`, TLS activado y una contraseña de aplicación de Google. No uses la contraseña normal de la cuenta. Otra opción es usar un proveedor SMTP transaccional.
+- Reinicia Django/Gunicorn después de modificar `.env`. No publiques credenciales de correo.
 
 ## Secciones principales
 
@@ -116,9 +120,24 @@ python manage.py test
 
 ## Configuración y despliegue
 
-La conexión actual requiere las variables `DB_NAME`, `DB_USER` y `DB_HOST`; `DB_PASSWORD` puede quedar vacío si la instalación local no usa contraseña y `DB_PORT` usa `3306` por defecto. El código carga variables desde `.env`.
+La aplicación carga sus variables desde `.env`. `SECRET_KEY` es obligatoria; por compatibilidad, también se reconoce el nombre antiguo `SECRETKEY`. Usa una clave aleatoria larga y secreta, y cámbiala manualmente antes de desplegar porque la clave configurada actualmente no pasa la comprobación de seguridad de Django. Cambiarla invalida las sesiones y firmas existentes. La conexión requiere `DB_NAME`, `DB_USER` y `DB_HOST`; `DB_PASSWORD` puede quedar vacío si el servidor local no usa contraseña y `DB_PORT` usa `3306` por defecto.
 
-`DEBUG` está desactivado por defecto si no se define en el entorno. Para desarrollo local se puede establecer en `True`; no debe habilitarse en producción. Antes de desplegar el sistema, configura una `SECRET_KEY` segura fuera del código, revisa `ALLOWED_HOSTS`, configura una base de datos adecuada y utiliza un servidor de producción. La clave secreta actualmente definida en la configuración es solo de desarrollo y debe reemplazarse antes de cualquier despliegue.
+`DEBUG` está desactivado por defecto. `ALLOWED_HOSTS` acepta una lista separada por comas y por defecto contempla la IP usada actualmente y las direcciones locales. Si el servidor usa un dominio, configura ese dominio en `ALLOWED_HOSTS` y su origen completo (incluyendo `https://`) en `CSRF_TRUSTED_ORIGINS`.
+
+### Preparar el servidor AWS
+
+En el servidor, instala las dependencias, configura un `.env` con los valores privados del entorno, y luego ejecuta:
+
+```bash
+python manage.py check --deploy
+python manage.py migrate
+python manage.py collectstatic --noinput
+gunicorn config.wsgi:application --bind 0.0.0.0:8000
+```
+
+Ejecuta Gunicorn como servicio detrás de un proxy web (por ejemplo, Nginx) y permite en el grupo de seguridad solo el tráfico necesario. Las evidencias subidas se guardan en `MEDIA_ROOT`; en AWS configura almacenamiento persistente o un servicio de objetos como S3 y sirve esos archivos de forma segura. `collectstatic` prepara los recursos estáticos, pero estos deben ser servidos por el proxy o un servicio de almacenamiento.
+
+No actives `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` ni HSTS mientras el sitio solo use HTTP. Una vez configurado y probado HTTPS, habilita esas opciones en el `.env` y aumenta `SECURE_HSTS_SECONDS` gradualmente.
 
 ## Estructura del repositorio
 

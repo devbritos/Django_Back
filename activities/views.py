@@ -13,22 +13,28 @@ from personal.models import Functionary
 from core.mixins import (
     DelegateRequiredMixin,
     FunctionaryRequiredMixin,
+    FunctionaryOrStaffRequiredMixin,
     VerifierRequiredMixin,
 )
 
 
 def get_activity_scope(user):
     activities = Activity.objects.all()
-    if user.is_superuser or user.functionary.is_admin:
+    functionary = getattr(user, 'functionary', None)
+    if user.is_staff or user.is_superuser or (
+        functionary is not None and functionary.is_admin
+    ):
         return activities
-    if user.functionary.is_delegate:
-        return activities.filter(functionary__delegation=user.functionary.delegation)
-    return activities.filter(functionary=user.functionary)
+    if functionary is None:
+        return activities.none()
+    if functionary.is_delegate:
+        return activities.filter(functionary__delegation=functionary.delegation)
+    return activities.filter(functionary=functionary)
 
 
 # ---------- Activity ----------
 
-class ActivityListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView):
+class ActivityListView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, ListView):
     model = Activity
     template_name = 'activities/activity_list.html'
     context_object_name = 'activities'
@@ -66,7 +72,7 @@ class ActivityCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateVie
 
         return response
 
-class ActivityUpdateView(LoginRequiredMixin, FunctionaryRequiredMixin, UpdateView):
+class ActivityUpdateView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, UpdateView):
     model = Activity
     form_class = ActivityForm
     template_name = 'activities/activity_form.html'
@@ -80,7 +86,7 @@ class ActivityUpdateView(LoginRequiredMixin, FunctionaryRequiredMixin, UpdateVie
         return super().form_valid(form)
 
 
-class ActivityDeleteView(LoginRequiredMixin, FunctionaryRequiredMixin, DeleteView):
+class ActivityDeleteView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, DeleteView):
     model = Activity
     template_name = 'activities/activity_confirm_delete.html'
     success_url = reverse_lazy('activities:activity_list')
@@ -95,7 +101,7 @@ class ActivityDeleteView(LoginRequiredMixin, FunctionaryRequiredMixin, DeleteVie
 
 # ---------- Evidence ----------
 
-class EvidenceListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView):
+class EvidenceListView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, ListView):
     model = Evidence
     template_name = 'activities/evidence_list.html'
     context_object_name = 'evidences'
@@ -107,14 +113,20 @@ class EvidenceListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView):
             'functionary',
         )
         user = self.request.user
-        if user.is_superuser or user.functionary.is_admin or user.functionary.is_verifier:
+        functionary = getattr(user, 'functionary', None)
+        if user.is_staff or user.is_superuser or (
+            functionary is not None
+            and (functionary.is_admin or functionary.is_verifier)
+        ):
             return queryset
-        if user.functionary.is_delegate:
+        if functionary is None:
+            return queryset.none()
+        if functionary.is_delegate:
             return queryset.filter(
-                functionary__delegation=user.functionary.delegation
+                functionary__delegation=functionary.delegation
             )
         else:
-            queryset = queryset.filter(functionary=user.functionary)
+            queryset = queryset.filter(functionary=functionary)
         return queryset
 
 

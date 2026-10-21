@@ -19,7 +19,7 @@
             <td>{{ e.validity_state }}</td>
             <td>
                 {% if e.validity_state == 'PENDING' %}
-                {% if user.is_superuser or user.functionary.is_verifier %}
+                {% if user.is_staff or user.is_superuser or user.functionary.is_verifier %}
                 <a href="{% url 'activities:evidence_validate' e.pk %}" class="btn btn-sm btn-outline-primary">Validar</a>
                 {% endif %}
                 {% endif %}
