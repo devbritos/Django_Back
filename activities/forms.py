@@ -6,21 +6,62 @@ class ActivityForm(forms.ModelForm):
     class Meta:
         model = Activity
         fields = [
-            'date', 'application', 'taken_action',
-            'name_contact', 'telephone_contact',
-            'functionary', 'measuring', 'commitment',
+            'date',
+            'measuring',
+            'application',
+            'taken_action',
+            'quantity',
+            'name_contact',
+            'telephone_contact',
         ]
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'application': forms.TextInput(attrs={'class': 'form-control'}),
-            'taken_action': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'name_contact': forms.TextInput(attrs={'class': 'form-control'}),
-            'telephone_contact': forms.TextInput(attrs={'class': 'form-control'}),
-            'functionary': forms.Select(attrs={'class': 'form-select'}),
             'measuring': forms.Select(attrs={'class': 'form-select'}),
-            'commitment': forms.Select(attrs={'class': 'form-select'}),
+            'application': forms.TextInput(
+                attrs={
+                    'class': 'form-control', 
+                    'placeholder': 'Ej: Atención de vecinos por junta de agua'
+                }
+            ),
+            'taken_action': forms.Textarea(
+                attrs={
+                    'class': 'form-control', 
+                    'rows': 3, 
+                    'placeholder': 'Describa brevemente la solución o gestión realizada...'
+                }
+            ),
+            'quantity': forms.NumberInput(
+                attrs={
+                    'class': 'form-control', 
+                    'min': 1,
+                    'value': 1
+                }
+            ),
+            'name_contact': forms.TextInput(
+                attrs={
+                    'class': 'form-control', 
+                    'placeholder': 'Nombre del beneficiario o contacto'
+                }
+            ),
+            'telephone_contact': forms.TextInput(
+                attrs={
+                    'class': 'form-control', 
+                    'placeholder': '+56 9 1234 5678'
+                }
+            ),
         }
-
+        labels = {
+            'date': 'Fecha de Registro',
+            'measuring': 'Ítem a Medir',
+            'application': 'Solicitud / Requerimiento',
+            'taken_action': 'Acción Realizada',
+            'quantity': 'Cantidad / Personas Atendidas',
+            'name_contact': 'Nombre de Contacto',
+            'telephone_contact': 'Teléfono de Contacto',
+        }
+        help_texts = {
+            'quantity': 'Indica cuántas personas o atenciones representa este registro (mínimo 1).'
+        }
 
 class EvidenceForm(forms.ModelForm):
     class Meta:
