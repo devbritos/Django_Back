@@ -1,13 +1,14 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView, CreateView
 from django.urls import reverse_lazy
-from django.db.models import Sum
 
 from .models import Goal, Period
 from .forms import GoalForm, PeriodForm
+from core.mixins import AdminRequiredMixin
 
-class GoalListView(LoginRequiredMixin, ListView):
+
+class GoalListView(LoginRequiredMixin, AdminRequiredMixin, ListView):
     model = Goal
     template_name = 'configuration/goal_list.html'
     context_object_name = 'goals'
@@ -43,7 +44,7 @@ class GoalListView(LoginRequiredMixin, ListView):
         return context
 
 
-class GoalCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class GoalCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     model = Goal
     form_class = GoalForm
     template_name = 'configuration/goal_form.html'
@@ -53,30 +54,7 @@ class GoalCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         messages.success(self.request, 'Meta registrada correctamente.')
         return super().form_valid(form)
 
-    def test_func(self):
-            # 1. Verificamos si el usuario tiene un funcionario asociado
-            if hasattr(self.request.user, 'functionary'):
-                
-                # --- TRUCO DE DEBUG ---
-                # Vamos a imprimir en la terminal los roles exactos que tiene este usuario
-                roles_actuales = list(self.request.user.functionary.functionaryrole_set.values_list('role__role_name', flat=True))
-                print(f"ROLES DEL USUARIO EN LA BD: {roles_actuales}")
-                
-                # 2. Verificamos si tiene el permiso
-                tiene_permiso = self.request.user.functionary.functionaryrole_set.filter(
-                    role__role_name__in=['Administrador', 'Coordinador']
-                ).exists()
-                
-                print(f"¿SE LE PERMITE EL ACCESO?: {tiene_permiso}")
-                return tiene_permiso
-                
-            print("EL USUARIO LOGUEADO NO TIENE UN PERFIL 'FUNCTIONARY' ASOCIADO")
-            return False
-
-# Asegúrate de que Period esté importado arriba junto con Goal
-# from .models import Goal, Period
-
-class PeriodCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class PeriodCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     model = Period
     form_class = PeriodForm
     template_name = 'configuration/period_form.html'
@@ -85,11 +63,3 @@ class PeriodCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, 'Período registrado correctamente.')
         return super().form_valid(form)
-
-    def test_func(self):
-        """Bloquea el acceso a quienes no sean Administrador o Coordinador"""
-        if hasattr(self.request.user, 'functionary'):
-            return self.request.user.functionary.functionaryrole_set.filter(
-                role__role_name__in=['Administrador', 'Coordinador']
-            ).exists()
-        return False

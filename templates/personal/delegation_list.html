@@ -9,7 +9,7 @@
         <h1 class="h3 fw-bold mb-1"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Delegaciones</h1>
         <p class="text-muted mb-0">Administración de delegaciones municipales</p>
     </div>
-    {% if perms.personal.add_delegation %}
+    {% if perms.personal.add_delegation or user.is_superuser or user.functionary.is_admin %}
     <a href="{% url 'personal:delegation_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Nueva delegación
     </a>
@@ -37,15 +37,17 @@
                     <td>{{ delegation.get_state_display }}</td>
                     <td>{{ delegation.get_field_display }}</td>
                     <td class="text-end pe-3">
-                        {% if perms.personal.change_delegation %}
+                        {% if perms.personal.change_delegation or user.is_superuser or user.functionary.is_admin %}
                         <a href="{% url 'personal:delegation_update' delegation.pk %}" class="btn btn-sm btn-outline-primary" aria-label="Editar delegación">
                             <i class="bi bi-pencil"></i>
                         </a>
                         {% endif %}
-                        {% if perms.personal.change_delegation and delegation.state == 'ACTIVO' %}
+                        {% if delegation.state == 'ACTIVO' %}
+                        {% if perms.personal.change_delegation or user.is_superuser or user.functionary.is_admin %}
                         <a href="{% url 'personal:delegation_delete' delegation.pk %}" class="btn btn-sm btn-outline-danger" aria-label="Desactivar delegación">
                             <i class="bi bi-person-dash"></i>
                         </a>
+                        {% endif %}
                         {% endif %}
                     </td>
                 </tr>

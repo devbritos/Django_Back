@@ -8,7 +8,14 @@ from django.utils import timezone
 from .calculations import obtener_indicador_funcionario
 from configuration.models import Period
 @login_required
-@user_passes_test(lambda u: u.is_staff)
+@user_passes_test(
+    lambda user: user.is_staff
+    or user.is_superuser
+    or (
+        hasattr(user, 'functionary')
+        and user.functionary.is_admin
+    )
+)
 def admin_dashboard(request):
     context = {
         'total_funcionarios': Functionary.objects.count(),
@@ -39,6 +46,9 @@ def user_dashboard(request):
 
 @login_required
 def dashboard_redirect(request):
-    if request.user.is_staff:
+    functionary = getattr(request.user, 'functionary', None)
+    if request.user.is_staff or request.user.is_superuser or (
+        functionary and functionary.is_admin
+    ):
         return redirect('admin_dashboard')
     return redirect('user_dashboard')

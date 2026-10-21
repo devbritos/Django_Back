@@ -10,9 +10,11 @@
             </h2>
             <p class="text-muted small mb-0">Registro y respaldo de atenciones e hitos ejecutados</p>
         </div>
+        {% if user.functionary %}
         <a href="{% url 'activities:activity_create' %}" class="btn btn-primary shadow-sm px-3 py-2 fw-semibold">
             <i class="bi bi-plus-lg me-1"></i> Nueva actividad
         </a>
+        {% endif %}
     </div>
 
     <!-- Tabla de actividades ajustada al wireframe WF-01 del informe -->
@@ -61,9 +63,11 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
+                                {% if user.is_superuser or user.functionary.is_admin or user.functionary.is_delegate or a.functionary_id == user.functionary.id %}
                                 <a href="{% url 'activities:activity_update' a.id %}" class="btn btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

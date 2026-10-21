@@ -1,12 +1,21 @@
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required, user_passes_test
  
  
 def require(perm):
-    """Exige estar logueado y tener el permiso indicado (ej: "personal.add_position").
+    """Exige permiso Django o el rol Administrador, además de iniciar sesión.
  
-    Sin permiso responde 403. Sin login redirige al login.
+    Sin acceso responde 403. Sin login redirige al login.
     """
     def decorator(view):
-        return login_required(permission_required(perm, raise_exception=True)(view))
+        def has_access(user):
+            if user.has_perm(perm) or user.is_superuser:
+                return True
+            functionary = getattr(user, 'functionary', None)
+            return bool(functionary and functionary.is_admin)
+
+        return login_required(
+            user_passes_test(has_access, raise_exception=True)(view)
+        )
+
     return decorator
  

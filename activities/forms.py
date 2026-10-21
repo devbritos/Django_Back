@@ -124,7 +124,6 @@ class EvidenceForm(forms.ModelForm):
             'file',
             'metadata',
             'activity',
-            'functionary',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -135,8 +134,12 @@ class EvidenceForm(forms.ModelForm):
             'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'metadata': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'activity': forms.Select(attrs={'class': 'form-select'}),
-            'functionary': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, activities=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if activities is not None:
+            self.fields['activity'].queryset = activities
 
     def clean_name(self):
         name = (self.cleaned_data.get('name') or '').strip()
@@ -172,6 +175,11 @@ class EvidenceValidationForm(forms.ModelForm):
             'validity_state': forms.Select(attrs={'class': 'form-select'}),
             'observations_validity': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+
+    def __init__(self, *args, verificator=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.instance.verificator = verificator
 
     def clean(self):
         cleaned_data = super().clean()

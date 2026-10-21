@@ -3,21 +3,37 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.db.models import Q
 
 from .models import Commitment
 from .forms import CommitmentForm
 from personal.models import Functionary
+from core.mixins import FunctionaryRequiredMixin
 
 
-class CommitmentListView(LoginRequiredMixin, ListView):
+def get_commitment_scope(user):
+    commitments = Commitment.objects.select_related(
+        'functionary',
+        'functionary__delegation',
+    )
+    if user.is_superuser:
+        return commitments
+
+    functionary = user.functionary
+    if functionary.is_admin:
+        return commitments
+    if functionary.is_delegate:
+        return commitments.filter(functionary__delegation=functionary.delegation)
+    return commitments.filter(functionary=functionary)
+
+
+class CommitmentListView(LoginRequiredMixin, FunctionaryRequiredMixin, ListView):
     model = Commitment
     template_name = 'agenda/commitment_list.html'
     context_object_name = 'commitments'
     ordering = ['commitment_date']
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('functionary')
+        queryset = get_commitment_scope(self.request.user)
         
         state = self.request.GET.get('state')
         functionary_id = self.request.GET.get('functionary')
@@ -41,63 +57,33 @@ class CommitmentListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         today = timezone.localdate()
-        
         context['states'] = Commitment.State.choices
-        context['functionaries'] = Functionary.objects.all()
-        
+        commitments = get_commitment_scope(self.request.user)
+        if self.request.user.is_superuser or self.request.user.functionary.is_admin:
+            context['functionaries'] = Functionary.objects.all()
+        elif self.request.user.functionary.is_delegate:
+            context['functionaries'] = Functionary.objects.filter(
+                delegation=self.request.user.functionary.delegation
+            )
+        else:
+            context['functionaries'] = Functionary.objects.filter(
+                pk=self.request.user.functionary.pk
+            )
         context['selected_state'] = self.request.GET.get('state', '')
         context['selected_functionary'] = self.request.GET.get('functionary', '')
         context['selected_territory'] = self.request.GET.get('territory', '')
-
-        # Cálculos basados en los enum de tu modelo
-        all_commitments = Commitment.objects.all()
-        total_count = all_commitments.count()
-        realized_count = all_commitments.filter(state=Commitment.State.DONE).count()
-        
+        context['today'] = today
+        total_count = commitments.count()
+        realized_count = commitments.filter(state=Commitment.State.DONE).count()
         context['completion_percentage'] = round((realized_count / total_count * 100), 1) if total_count > 0 else 0
-        context['pending_count'] = all_commitments.exclude(state=Commitment.State.DONE).count()
-        context['expired_count'] = all_commitments.filter(
+        context['pending_count'] = commitments.exclude(state=Commitment.State.DONE).count()
+        context['expired_count'] = commitments.filter(
             commitment_date__lt=today
         ).exclude(state=Commitment.State.DONE).count()
-
-        return context
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        today = timezone.now().date()
-        context['today'] = today
-        
-        # Para poblar los select de filtros en la plantilla
-        context['states'] = Commitment.State.choices if hasattr(Commitment, 'State') else []
-        context['functionaries'] = Functionary.objects.all()
-        
-        # Filtros seleccionados para mantener los valores en el formulario
-        context['selected_state'] = self.request.GET.get('state', '')
-        context['selected_responsible'] = self.request.GET.get('responsible', '')
-        context['selected_territory'] = self.request.GET.get('territory', '')
-
-        # Cálculos de Indicadores Superiores (RF-15 y RF-16)
-        all_commitments = Commitment.objects.all()
-        total_count = all_commitments.count()
-        
-        # Estado asumido para completados: 'REALIZADO'
-        realized_count = all_commitments.filter(Q(state='REALIZADO') | Q(state='Realizado')).count()
-        
-        # Porcentaje realizado del tubo (RF-16)
-        context['completion_percentage'] = round((realized_count / total_count * 100), 1) if total_count > 0 else 0
-        
-        # Cantidad de pendientes
-        context['pending_count'] = all_commitments.exclude(Q(state='REALIZADO') | Q(state='Realizado')).count()
-        
-        # Alertas de compromisos vencidos (RF-15)
-        context['expired_count'] = all_commitments.filter(
-            commitment_date__lt=today
-        ).exclude(Q(state='REALIZADO') | Q(state='Realizado')).count()
-
         return context
 
 
-class CommitmentCreateView(LoginRequiredMixin, CreateView):
+class CommitmentCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateView):
     model = Commitment
     form_class = CommitmentForm
     template_name = 'agenda/commitment_form.html'
@@ -125,21 +111,27 @@ class CommitmentCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class CommitmentUpdateView(LoginRequiredMixin, UpdateView):
+class CommitmentUpdateView(LoginRequiredMixin, FunctionaryRequiredMixin, UpdateView):
     model = Commitment
     form_class = CommitmentForm
     template_name = 'agenda/commitment_form.html'
     success_url = reverse_lazy('agenda:commitment_list')
+
+    def get_queryset(self):
+        return get_commitment_scope(self.request.user)
 
     def form_valid(self, form):
         messages.success(self.request, 'Compromiso actualizado.')
         return super().form_valid(form)
 
 
-class CommitmentDeleteView(LoginRequiredMixin, DeleteView):
+class CommitmentDeleteView(LoginRequiredMixin, FunctionaryRequiredMixin, DeleteView):
     model = Commitment
     template_name = 'agenda/commitment_confirm_delete.html'
     success_url = reverse_lazy('agenda:commitment_list')
+
+    def get_queryset(self):
+        return get_commitment_scope(self.request.user)
 
     def form_valid(self, form):
         messages.success(self.request, 'Compromiso eliminado correctamente.')

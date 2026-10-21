@@ -219,9 +219,12 @@
             </a>
 
             <div class="sidebar-section-title">Gestión</div>
+            {% if user.is_superuser or user.functionary.is_delegate or user.functionary.is_admin %}
             <a href="{% url 'activities:traffic_light' %}" class="sidebar-link {% if 'semaforo' in request.path or 'traffic' in request.path %}active{% endif %}">
                 <i class="bi bi-traffic-light-fill"></i> Semáforo
             </a>
+            {% endif %}
+            {% if user.functionary %}
             <a href="{% url 'agenda:commitment_list' %}" class="sidebar-link {% if 'agenda' in request.path or 'commitment' in request.path %}active{% endif %}">
                 <i class="bi bi-calendar-check-fill"></i> Tubo de Trabajo
             </a>
@@ -231,7 +234,9 @@
             <a href="{% url 'activities:evidence_list' %}" class="sidebar-link {% if 'evidencias' in request.path %}active{% endif %}">
                 <i class="bi bi-file-earmark-image-fill"></i> Evidencias
             </a>
+            {% endif %}
 
+            {% if user.is_superuser or user.functionary.is_admin %}
             <div class="sidebar-section-title">Administración</div>
             <a href="{% url 'personal:functionary_list' %}" class="sidebar-link {% if 'functionaries' in request.path %}active{% endif %}">
                 <i class="bi bi-people-fill"></i> Funcionarios
@@ -242,6 +247,7 @@
             <a href="{% url 'configuration:goal_list' %}" class="sidebar-link {% if 'metas' in request.path or 'configuration' in request.path %}active{% endif %}">
                 <i class="bi bi-bar-chart-fill"></i> Ponderaciones
             </a>
+            {% endif %}
         </div>
     </div>
 

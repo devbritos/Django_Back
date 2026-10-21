@@ -8,7 +8,7 @@
         <h1 class="h3 fw-bold mb-1"><i class="bi bi-shield-check text-primary me-2"></i>Roles asignados</h1>
         <p class="text-muted mb-0">Asignaciones de roles a funcionarios</p>
     </div>
-    {% if perms.personal.add_functionaryrole %}
+    {% if perms.personal.add_functionaryrole or user.is_superuser or user.functionary.is_admin %}
     <a href="{% url 'personal:functionary_role_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Asignar rol</a>
     {% endif %}
 </div>
@@ -35,7 +35,7 @@
                     <td class="ps-3">{{ assignment.functionary.full_name }}</td>
                     <td>{{ assignment.role.get_role_name_display }}</td>
                     <td class="text-end pe-3">
-                        {% if perms.personal.delete_functionaryrole %}
+                        {% if perms.personal.delete_functionaryrole or user.is_superuser or user.functionary.is_admin %}
                         <a href="{% url 'personal:functionary_role_delete' assignment.pk %}" class="btn btn-sm btn-outline-danger" aria-label="Quitar rol"><i class="bi bi-trash3"></i></a>
                         {% endif %}
                     </td>
