@@ -16,7 +16,9 @@
                 </div>
                 <form method="post" class="d-flex gap-2">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                    <button type="submit" class="btn btn-danger" data-confirm-delete="Se eliminará el funcionario y su cuenta de acceso.">
+                        Sí, eliminar
+                    </button>
                     <a href="{% url 'personal:functionary_list' %}" class="btn btn-outline-secondary">Cancelar</a>
                 </form>
             </div>

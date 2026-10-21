@@ -12,7 +12,7 @@
             </h2>
             <p class="text-muted small mb-0">Nómina del personal municipal, asignación de cargos y roles de acceso</p>
         </div>
-        {% if perms.personal.add_functionary %}
+        {% if perms.personal.add_functionary or user.is_superuser or user.functionary.is_admin %}
         <a href="{% url 'personal:functionary_create' %}" class="btn btn-primary shadow-sm px-3 py-2 fw-semibold">
             <i class="bi bi-person-plus-fill me-1"></i> Nuevo funcionario
         </a>
@@ -96,17 +96,17 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group">
-                                {% if perms.personal.add_functionaryrole %}
+                                {% if perms.personal.add_functionaryrole or user.is_superuser or user.functionary.is_admin %}
                                 <a href="{% url 'personal:functionary_role_create' %}?functionary={{ f.pk }}" class="btn btn-outline-secondary" title="Asignar o agregar rol">
                                     <i class="bi bi-shield-plus me-1"></i> Asignar rol
                                 </a>
                                 {% endif %}
-                                {% if perms.personal.change_functionary %}
+                                {% if perms.personal.change_functionary or user.is_superuser or user.functionary.is_admin %}
                                 <a href="{% url 'personal:functionary_update' f.pk %}" class="btn btn-outline-primary" title="Editar funcionario">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
                                 {% endif %}
-                                {% if perms.personal.delete_functionary %}
+                                {% if perms.personal.delete_functionary or user.is_superuser or user.functionary.is_admin %}
                                 <a href="{% url 'personal:functionary_delete' f.pk %}" class="btn btn-outline-danger" title="Eliminar funcionario">
                                     <i class="bi bi-trash-fill"></i>
                                 </a>

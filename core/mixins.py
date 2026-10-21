@@ -2,22 +2,43 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 
 
+def _active_functionary(user):
+    if not user.is_authenticated or not user.is_active:
+        return None
+    functionary = getattr(user, 'functionary', None)
+    if functionary is None or functionary.deleted_at is not None:
+        return None
+    return functionary
+
+
 class FunctionaryRequiredMixin(UserPassesTestMixin):
     """Verifica que el usuario esté autenticado y posea un perfil de Funcionario activo."""
 
     def test_func(self):
-        user = self.request.user
-        return (
-            user.is_authenticated
-            and hasattr(user, 'functionary')
-            and getattr(user.functionary, 'is_active', True)
-        )
+        return _active_functionary(self.request.user) is not None
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
         raise PermissionDenied(
             'Tu usuario no posee un perfil de funcionario activo asignado.'
+        )
+
+
+class FunctionaryOrStaffRequiredMixin(UserPassesTestMixin):
+    """Permite el acceso a funcionarios activos y administradores de Django."""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and (
+            user.is_staff or user.is_superuser or _active_functionary(user) is not None
+        )
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied(
+            'Se requiere una cuenta administrativa o un perfil de funcionario activo.'
         )
 
 
@@ -31,9 +52,10 @@ class VerifierRequiredMixin(UserPassesTestMixin):
         user = self.request.user
         if not user.is_authenticated:
             return False
-        if user.is_superuser:
+        if user.is_staff or user.is_superuser:
             return True
-        return hasattr(user, 'functionary') and user.functionary.is_verifier
+        functionary = _active_functionary(user)
+        return functionary is not None and functionary.is_verifier
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -55,7 +77,10 @@ class DelegateRequiredMixin(UserPassesTestMixin):
             return False
         if user.is_superuser:
             return True
-        return hasattr(user, 'functionary') and user.functionary.is_delegate
+        functionary = _active_functionary(user)
+        return functionary is not None and (
+            functionary.is_delegate or functionary.is_admin
+        )
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -77,7 +102,8 @@ class AdminRequiredMixin(UserPassesTestMixin):
             return False
         if user.is_superuser:
             return True
-        return hasattr(user, 'functionary') and user.functionary.is_admin
+        functionary = _active_functionary(user)
+        return functionary is not None and functionary.is_admin
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

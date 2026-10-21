@@ -12,6 +12,10 @@ urlpatterns = [
 
     path('evidencias/', views.EvidenceListView.as_view(), name='evidence_list'),
     path('evidencias/nueva/', views.EvidenceCreateView.as_view(), name='evidence_create'),
-    path('evidencias/<int:pk>/validar/', views.evidence_validate, name='evidence_validate'),
+    path(
+        'evidencias/<int:pk>/validar/',
+        views.EvidenceValidateView.as_view(),
+        name='evidence_validate',
+    ),
     path('traffic_light/',views.TrafficLightView.as_view(),name = 'traffic_light'),
 ]

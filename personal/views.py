@@ -1,16 +1,20 @@
 from django.contrib import messages
 from django.db.models import ProtectedError
-from django.forms import modelform_factory
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.decorators import require
 
+from .forms import (
+    DelegationForm,
+    FunctionaryCustomForm,
+    FunctionaryRoleForm,
+    FunctionaryUpdateForm,
+    PositionForm,
+    RoleForm,
+)
 from .models import Delegation, Functionary, FunctionaryRole, Position, Role
 
 # ---------- Delegation ----------
-DelegationForm = modelform_factory(Delegation, fields=["name", "state", "field"])
-
-
 @require("personal.view_delegation")
 def delegation_list(request):
     qs = Delegation.objects.all()
@@ -55,9 +59,6 @@ def delegation_delete(request, pk):
     return render(request, "personal/delegation_confirm_delete.html", {"object": obj})
 
 # ---------- Position ----------
-PositionForm = modelform_factory(Position, fields=["name", "validity"])
-
-
 @require("personal.view_position")
 def position_list(request):
     qs = Position.objects.all()
@@ -102,10 +103,6 @@ def position_delete(request, pk):
     return render(request, "personal/position_confirm_delete.html", {"object": obj})
 
 # ---------- Functionary ----------
-FunctionaryForm = modelform_factory(Functionary, fields=["names", "lastnames", "delegation", "position"])
-
-from .forms import FunctionaryCustomForm
-
 # ---------- Functionary ----------
 
 @require("personal.view_functionary")
@@ -137,7 +134,6 @@ def functionary_create(request):
 def functionary_update(request, pk):
     obj = get_object_or_404(Functionary, pk=pk)
     # Para editar datos básicos del funcionario (sin cambiar credenciales)
-    FunctionaryUpdateForm = modelform_factory(Functionary, fields=["names", "lastnames", "delegation", "position"])
     form = FunctionaryUpdateForm(request.POST or None, instance=obj)
     if form.is_valid():
         form.save()
@@ -166,9 +162,6 @@ def functionary_delete(request, pk):
         return redirect("personal:functionary_list")
     return render(request, "personal/functionary_confirm_delete.html", {"object": obj})
 # ---------- Role ----------
-RoleForm = modelform_factory(Role, fields=["role_name"])
-
-
 @require("personal.view_role")
 def role_list(request):
     return render(request, "personal/role_list.html", {"object_list": Role.objects.all()})
@@ -210,9 +203,6 @@ def role_delete(request, pk):
 
 
 # ---------- FunctionaryRole (asignar roles a un funcionario) ----------
-FunctionaryRoleForm = modelform_factory(FunctionaryRole, fields=["functionary", "role"])
-
-
 @require("personal.view_functionaryrole")
 def functionary_role_list(request):
     qs = FunctionaryRole.objects.select_related("functionary", "role")
@@ -222,12 +212,6 @@ def functionary_role_list(request):
         "object_list": qs,
         "functionaries": Functionary.objects.all(),
     })
-
-
-# ---------- FunctionaryRole (asignar roles a un funcionario) ----------
-FunctionaryRoleForm = modelform_factory(
-    FunctionaryRole, fields=['functionary', 'role']
-)
 
 
 @require('personal.add_functionaryrole')

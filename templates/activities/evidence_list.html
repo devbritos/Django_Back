@@ -2,7 +2,9 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Evidencias</h2>
+    {% if user.functionary %}
     <a href="{% url 'activities:evidence_create' %}" class="btn btn-primary">+ Subir evidencia</a>
+    {% endif %}
 </div>
 <table class="table table-striped">
     <thead>
@@ -17,7 +19,9 @@
             <td>{{ e.validity_state }}</td>
             <td>
                 {% if e.validity_state == 'PENDING' %}
+                {% if user.is_staff or user.is_superuser or user.functionary.is_verifier %}
                 <a href="{% url 'activities:evidence_validate' e.pk %}" class="btn btn-sm btn-outline-primary">Validar</a>
+                {% endif %}
                 {% endif %}
             </td>
         </tr>

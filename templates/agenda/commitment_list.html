@@ -42,9 +42,11 @@
             </h2>
             <p class="text-muted small mb-0">Gestión y seguimiento de compromisos con la comunidad</p>
         </div>
+        {% if user.functionary %}
         <a href="{% url 'agenda:commitment_create' %}" class="btn btn-primary shadow-sm px-3 py-2 fw-semibold">
             <i class="bi bi-plus-lg me-1"></i> Nuevo compromiso
         </a>
+        {% endif %}
     </div>
 
     <!-- Indicadores superiores (RF-15 / RF-16) -->

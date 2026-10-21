@@ -1,5 +1,7 @@
 from django import forms
+from django.utils import timezone
 from .models import Commitment
+
 
 class CommitmentForm(forms.ModelForm):
     # Campo oculto opcional para vincular la actividad de origen (RF-07)
@@ -26,7 +28,7 @@ class CommitmentForm(forms.ModelForm):
             }),
             'commitment_date': forms.DateInput(attrs={
                 'type': 'date', 
-                'class': 'form-control'
+                'class': 'form-control',
             }),
             'support': forms.TextInput(attrs={
                 'class': 'form-control', 
@@ -60,3 +62,36 @@ class CommitmentForm(forms.ModelForm):
         # Si es una creación nueva, establecer estado inicial por defecto
         if not self.instance.pk and 'state' in self.fields:
             self.fields['state'].initial = 'JOINED'
+
+    def clean_origin(self):
+        origin = (self.cleaned_data.get('origin') or '').strip()
+        if not origin:
+            raise forms.ValidationError('Debe indicar el origen de la solicitud.')
+        return origin
+
+    def clean_applic_name(self):
+        name = (self.cleaned_data.get('applic_name') or '').strip()
+        if not name:
+            raise forms.ValidationError('Debe ingresar el nombre del solicitante.')
+        return name
+
+    def clean_territory(self):
+        territory = (self.cleaned_data.get('territory') or '').strip()
+        if not territory:
+            raise forms.ValidationError('Debe indicar el territorio o sector.')
+        return territory
+
+    def clean_commitment_date(self):
+        commitment_date = self.cleaned_data.get('commitment_date')
+        if (
+            not self.instance.pk
+            and commitment_date
+            and commitment_date < timezone.localdate()
+        ):
+            raise forms.ValidationError(
+                'La fecha del compromiso no puede estar en el pasado.'
+            )
+        return commitment_date
+
+    def clean_observation(self):
+        return (self.cleaned_data.get('observation') or '').strip()

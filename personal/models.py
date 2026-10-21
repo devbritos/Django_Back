@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from core.models import BaseModel
+from .validators import validate_person_name
 
 
 class Delegation(BaseModel):
@@ -70,8 +71,8 @@ class Functionary(BaseModel):
     )
     delegation = models.ForeignKey(Delegation, on_delete=models.PROTECT)
     position = models.ForeignKey(Position, on_delete=models.PROTECT)
-    names = models.CharField(max_length=50)
-    lastnames = models.CharField(max_length=50)
+    names = models.CharField(max_length=50, validators=[validate_person_name])
+    lastnames = models.CharField(max_length=50, validators=[validate_person_name])
 
     @property
     def full_name(self):
