@@ -13,6 +13,12 @@
     {% endif %}
 </div>
 <form method="get" class="card card-body border-0 shadow-sm mb-3">
+    <label for="search-roles" class="form-label">Buscar asignaciones</label>
+    <div class="d-flex gap-2 mb-3">
+        <input id="search-roles" class="form-control" type="search" name="q" value="{{ search_query }}" placeholder="Funcionario o rol">
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+        <a class="btn btn-outline-success text-nowrap" href="{{ request.path }}?{{ query_params }}{% if query_params %}&{% endif %}export=xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
     <label for="filter-functionary" class="form-label">Funcionario</label>
     <div class="d-flex gap-2">
         <select id="filter-functionary" name="functionary" class="form-select">
@@ -47,4 +53,5 @@
         </table>
     </div>
 </div>
+{% include "_pagination.html" %}
 {% endblock %}

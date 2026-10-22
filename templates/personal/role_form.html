@@ -8,7 +8,9 @@
     <div class="col-md-8 col-lg-6">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-municipal text-white py-3">
-                <h1 class="h5 mb-0">{% if object %}Editar{% else %}Nuevo{% endif %} rol</h1>
+                <h1 class="h5 mb-0">
+                    {% if object %}Editar rol: {{ object.get_role_name_display }}{% else %}Nuevo rol{% endif %}
+                </h1>
             </div>
             <div class="card-body p-4">
                 <form method="post">

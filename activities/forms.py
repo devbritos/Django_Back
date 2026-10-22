@@ -75,6 +75,18 @@ class ActivityForm(forms.ModelForm):
             'quantity': 'Indica cuántas personas o atenciones representa este registro (mínimo 1).'
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        active_measurings = self.fields['measuring'].queryset.filter(
+            validity=True,
+            deleted_at__isnull=True,
+        )
+        if self.instance.pk:
+            active_measurings = active_measurings | self.fields[
+                'measuring'
+            ].queryset.filter(pk=self.instance.measuring_id)
+        self.fields['measuring'].queryset = active_measurings.distinct()
+
     def clean_application(self):
         application = (self.cleaned_data.get('application') or '').strip()
         if not application:
@@ -112,6 +124,26 @@ class ActivityForm(forms.ModelForm):
         if date_value and date_value > timezone.localdate():
             raise forms.ValidationError('La fecha no puede ser futura.')
         return date_value
+
+
+class ActivityValidationForm(forms.ModelForm):
+    class Meta:
+        model = Activity
+        fields = ['state_validity']
+        widgets = {
+            'state_validity': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'state_validity': 'Resultado de la validación',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['state_validity'].choices = [
+            choice
+            for choice in Activity.STATE_CHOICES
+            if choice[0] in {'VALIDATED', 'REJECTED'}
+        ]
 
 
 class EvidenceForm(forms.ModelForm):

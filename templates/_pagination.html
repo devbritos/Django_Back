@@ -1,0 +1,17 @@
+{% if is_paginated %}
+<nav aria-label="Paginación de resultados">
+    <ul class="pagination pagination-sm justify-content-center my-3">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="{{ request.path }}?{{ query_params }}{% if query_params %}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="{{ request.path }}?{{ query_params }}{% if query_params %}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

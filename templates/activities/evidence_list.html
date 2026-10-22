@@ -6,6 +6,13 @@
     <a href="{% url 'activities:evidence_create' %}" class="btn btn-primary">+ Subir evidencia</a>
     {% endif %}
 </div>
+<div class="d-flex gap-2 mb-3">
+    <form method="get" class="d-flex gap-2 flex-grow-1">
+        <input class="form-control" type="search" name="q" value="{{ search_query }}" placeholder="Buscar evidencia, actividad o funcionario">
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+    </form>
+    <a class="btn btn-outline-success text-nowrap" href="{{ request.path }}?{{ query_params }}{% if query_params %}&{% endif %}export=xlsx"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</a>
+</div>
 <table class="table table-striped">
     <thead>
         <tr><th>Nombre</th><th>Actividad</th><th>Subida por</th><th>Estado</th><th></th></tr>
@@ -30,4 +37,5 @@
         {% endfor %}
     </tbody>
 </table>
+{% include "_pagination.html" %}
 {% endblock %}

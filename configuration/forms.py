@@ -1,6 +1,32 @@
 from django import forms
 
-from .models import Goal, Period
+from .models import Goal, Measuring, Period
+
+
+class MeasuringForm(forms.ModelForm):
+    class Meta:
+        model = Measuring
+        fields = ['code', 'service', 'measurable_item', 'validity']
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'service': forms.TextInput(attrs={'class': 'form-control'}),
+            'measurable_item': forms.Textarea(
+                attrs={'class': 'form-control', 'rows': 3}
+            ),
+            'validity': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_code(self):
+        code = (self.cleaned_data.get('code') or '').strip()
+        if not code:
+            raise forms.ValidationError('Debe ingresar el código del ítem.')
+        return code
+
+    def clean_service(self):
+        service = (self.cleaned_data.get('service') or '').strip()
+        if not service:
+            raise forms.ValidationError('Debe ingresar el nombre del ítem.')
+        return service
 
 
 class GoalForm(forms.ModelForm):
@@ -30,6 +56,25 @@ class GoalForm(forms.ModelForm):
                 attrs={'class': 'form-control', 'placeholder': 'Ej: atenciones'}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['position'].queryset = self.fields['position'].queryset.filter(
+            validity=True,
+            deleted_at__isnull=True,
+        )
+        active_measuring = Measuring.objects.filter(
+            validity=True,
+            deleted_at__isnull=True,
+        )
+        if self.instance.pk:
+            active_measuring = active_measuring | Measuring.objects.filter(
+                pk=self.instance.measuring_id
+            )
+        self.fields['measuring'].queryset = active_measuring.distinct()
+        self.fields['period'].queryset = self.fields['period'].queryset.filter(
+            deleted_at__isnull=True,
+        )
 
     def clean_weight(self):
         weight = self.cleaned_data.get('weight')

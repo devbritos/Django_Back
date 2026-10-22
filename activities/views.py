@@ -6,9 +6,16 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.utils import timezone
 from configuration.models import Goal, Period
 from .models import Activity, Evidence
-from .forms import ActivityForm, EvidenceForm, EvidenceValidationForm
+from .forms import (
+    ActivityForm,
+    ActivityValidationForm,
+    EvidenceForm,
+    EvidenceValidationForm,
+)
 from django.views.generic import TemplateView
 from django.db.models import Sum
+from core.exports import excel_response
+from core.lists import search_queryset
 from personal.models import Functionary
 from core.mixins import (
     DelegateRequiredMixin,
@@ -22,14 +29,23 @@ def get_activity_scope(user):
     activities = Activity.objects.all()
     functionary = getattr(user, 'functionary', None)
     if user.is_staff or user.is_superuser or (
-        functionary is not None and functionary.is_admin
+        functionary is not None and functionary.has_global_scope
     ):
         return activities
     if functionary is None:
         return activities.none()
-    if functionary.is_delegate:
+    if functionary.is_delegate or functionary.is_verifier:
         return activities.filter(functionary__delegation=functionary.delegation)
     return activities.filter(functionary=functionary)
+
+
+def can_validate_own_activity(user):
+    functionary = getattr(user, 'functionary', None)
+    return (
+        user.is_staff
+        or user.is_superuser
+        or (functionary is not None and functionary.is_admin)
+    )
 
 
 # ---------- Activity ----------
@@ -39,9 +55,69 @@ class ActivityListView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, List
     template_name = 'activities/activity_list.html'
     context_object_name = 'activities'
     ordering = ['-date']
+    paginate_by = 20
 
     def get_queryset(self):
-        return get_activity_scope(self.request.user).order_by(*self.ordering)
+        queryset = get_activity_scope(self.request.user).select_related(
+            'functionary',
+            'functionary__delegation',
+            'measuring',
+        )
+        queryset = search_queryset(
+            queryset,
+            self.request.GET.get('q'),
+            'application',
+            'taken_action',
+            'name_contact',
+            'telephone_contact',
+            'measuring__service',
+            'measuring__measurable_item',
+            'functionary__names',
+            'functionary__lastnames',
+        )
+        return queryset.order_by(*self.ordering)
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get('export') == 'xlsx':
+            return excel_response(
+                'actividades.xlsx',
+                ['Fecha', 'Solicitud', 'Acción realizada', 'Contacto',
+                 'Teléfono', 'Ítem', 'Cantidad', 'Delegación', 'Responsable',
+                 'Estado'],
+                (
+                    [
+                        item.date,
+                        item.application,
+                        item.taken_action,
+                        item.name_contact,
+                        item.telephone_contact,
+                        item.measuring.service,
+                        item.quantity,
+                        item.functionary.delegation.name,
+                        item.functionary.full_name,
+                        item.get_state_validity_display(),
+                    ]
+                    for item in self.get_queryset()
+                ),
+            )
+        add_pagination_context(self.request, context)
+        return super().render_to_response(context, **response_kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        functionary = getattr(self.request.user, 'functionary', None)
+        context['can_validate_activities'] = (
+            self.request.user.is_staff
+            or self.request.user.is_superuser
+            or (functionary is not None and functionary.is_verifier)
+        )
+        context['can_validate_own_activities'] = can_validate_own_activity(
+            self.request.user
+        )
+        context['current_functionary_id'] = (
+            functionary.pk if functionary is not None else None
+        )
+        return context
 
 
 class ActivityCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateView):
@@ -82,8 +158,9 @@ class ActivityUpdateView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, Up
         return get_activity_scope(self.request.user)
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         messages.success(self.request, 'Actividad actualizada correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class ActivityDeleteView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, DeleteView):
@@ -95,8 +172,46 @@ class ActivityDeleteView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, De
         return get_activity_scope(self.request.user)
 
     def form_valid(self, form):
+        response = super().form_valid(form)
         messages.success(self.request, 'Actividad eliminada correctamente.')
-        return super().form_valid(form)
+        return response
+
+
+class ActivityValidateView(
+    LoginRequiredMixin,
+    VerifierRequiredMixin,
+    UpdateView,
+):
+    model = Activity
+    form_class = ActivityValidationForm
+    template_name = 'activities/activity_validate.html'
+    context_object_name = 'activity'
+    success_url = reverse_lazy('activities:activity_list')
+
+    def get_queryset(self):
+        queryset = get_activity_scope(self.request.user).filter(
+            state_validity='PENDING',
+        )
+        functionary = getattr(self.request.user, 'functionary', None)
+        if functionary is not None and not can_validate_own_activity(
+            self.request.user
+        ):
+            queryset = queryset.exclude(functionary=functionary)
+        return queryset
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.object.state_validity == 'VALIDATED':
+            messages.success(
+                self.request,
+                'Actividad validada; su avance se reflejará en el semáforo.',
+            )
+        else:
+            messages.warning(
+                self.request,
+                'Actividad rechazada; no se contabilizará en el semáforo.',
+            )
+        return response
 
 
 # ---------- Evidence ----------
@@ -106,28 +221,47 @@ class EvidenceListView(LoginRequiredMixin, FunctionaryOrStaffRequiredMixin, List
     template_name = 'activities/evidence_list.html'
     context_object_name = 'evidences'
     ordering = ['-created_at']
+    paginate_by = 20
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
+        queryset = get_evidence_scope(self.request.user).select_related(
             'activity',
             'functionary',
+            'functionary__delegation',
         )
-        user = self.request.user
-        functionary = getattr(user, 'functionary', None)
-        if user.is_staff or user.is_superuser or (
-            functionary is not None
-            and (functionary.is_admin or functionary.is_verifier)
-        ):
-            return queryset
-        if functionary is None:
-            return queryset.none()
-        if functionary.is_delegate:
-            return queryset.filter(
-                functionary__delegation=functionary.delegation
+        queryset = search_queryset(
+            queryset,
+            self.request.GET.get('q'),
+            'name',
+            'author',
+            'metadata',
+            'activity__application',
+            'functionary__names',
+            'functionary__lastnames',
+        )
+        return queryset.order_by(*self.ordering)
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get('export') == 'xlsx':
+            return excel_response(
+                'evidencias.xlsx',
+                ['Nombre', 'Actividad', 'Autor', 'Fecha', 'Estado',
+                 'Funcionario', 'Delegación'],
+                (
+                    [
+                        evidence.name,
+                        evidence.activity.application,
+                        evidence.author,
+                        evidence.date_evidence,
+                        evidence.get_validity_state_display(),
+                        evidence.functionary.full_name,
+                        evidence.functionary.delegation.name,
+                    ]
+                    for evidence in self.get_queryset()
+                ),
             )
-        else:
-            queryset = queryset.filter(functionary=functionary)
-        return queryset
+        add_pagination_context(self.request, context)
+        return super().render_to_response(context, **response_kwargs)
 
 
 class EvidenceCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateView):
@@ -145,8 +279,9 @@ class EvidenceCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateVie
 
     def form_valid(self, form):
         form.instance.functionary = self.request.user.functionary
+        response = super().form_valid(form)
         messages.success(self.request, 'Evidencia subida correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class EvidenceValidateView(
@@ -158,6 +293,9 @@ class EvidenceValidateView(
     form_class = EvidenceValidationForm
     template_name = 'activities/evidence_validate.html'
     success_url = reverse_lazy('activities:evidence_list')
+
+    def get_queryset(self):
+        return get_evidence_scope(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -203,7 +341,7 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
             deleted_at__isnull=True
         ).select_related('position', 'delegation')
         user = self.request.user
-        if not user.is_superuser and not user.functionary.is_admin:
+        if not user.is_superuser and not user.functionary.has_global_scope:
             functionaries = functionaries.filter(
                 delegation=user.functionary.delegation
             )
@@ -238,9 +376,7 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
                 item_compliance = min(item_compliance, 1.0)
 
                 # Sumar al cumplimiento ponderado
-                total_weighted_compliance += (
-                    item_compliance * float(goal.weight) / 100
-                )
+                total_weighted_compliance += item_compliance * float(goal.weight)
 
             # 4. Determinar Estado del Semáforo (Verde, Amarillo, Rojo)
             # Diferencia entre lo logrado y lo esperado
@@ -273,3 +409,25 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
         context['traffic_light_data'] = traffic_light_data
 
         return context
+
+
+def get_evidence_scope(user):
+    evidences = Evidence.objects.all()
+    functionary = getattr(user, 'functionary', None)
+    if user.is_staff or user.is_superuser or (
+        functionary is not None and functionary.has_global_scope
+    ):
+        return evidences
+    if functionary is None:
+        return evidences.none()
+    if functionary.is_delegate:
+        return evidences.filter(functionary__delegation=functionary.delegation)
+    return evidences.filter(functionary=functionary)
+
+
+def add_pagination_context(request, context):
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    query_params.pop('export', None)
+    context['query_params'] = query_params.urlencode()
+    context['search_query'] = request.GET.get('q', '')

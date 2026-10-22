@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Registrar atención ciudadana{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+    <div class="card shadow-sm">
+        <div class="card-header bg-municipal text-white"><h1 class="h5 mb-0"><i class="bi bi-chat-left-text me-2"></i>Registrar atención ciudadana</h1></div>
+        <div class="card-body">
+            <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>La delegación y el usuario responsable se asignan automáticamente desde tu sesión.</div>
+            {% if not has_active_attention_types %}
+            <div class="alert alert-warning" role="alert">
+                <h2 class="h6"><i class="bi bi-exclamation-triangle me-1"></i>No hay tipos de atención activos</h2>
+                <p class="mb-2">Para registrar atenciones, primero se debe crear y activar al menos un tipo de atención.</p>
+                {% if can_manage_attention_types %}
+                <a class="btn btn-sm btn-primary" href="{% url 'atenciones:attention_type_create' %}">
+                    <i class="bi bi-plus-lg me-1"></i>Crear tipo de atención
+                </a>
+                {% else %}
+                <p class="mb-0">Solicita al administrador que configure el catálogo de tipos de atención.</p>
+                {% endif %}
+            </div>
+            {% elif can_manage_attention_types %}
+            <div class="d-flex justify-content-end mb-3">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'atenciones:attention_type_list' %}">
+                    <i class="bi bi-gear me-1"></i>Administrar tipos de atención
+                </a>
+            </div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div id="subattention-error" class="alert alert-danger d-none" role="alert"></div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a class="btn btn-outline-secondary" href="{% url 'atenciones:attention_list' %}">Cancelar</a>
+                    {% if has_active_attention_types %}
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Guardar atención</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div></div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('id_attention_type');
+    const subSelect = document.getElementById('id_sub_attention');
+    const errorBox = document.getElementById('subattention-error');
+    if (!typeSelect || !subSelect || !errorBox) return;
+
+    const endpointTemplate = "{% url 'atenciones:subattention_options' 0 %}";
+    typeSelect.addEventListener('change', async function () {
+        subSelect.replaceChildren(new Option('---------', ''));
+        subSelect.disabled = true;
+        errorBox.classList.add('d-none');
+        if (!typeSelect.value) {
+            subSelect.disabled = false;
+            return;
+        }
+        try {
+            const endpoint = endpointTemplate.replace('/0/', '/' + typeSelect.value + '/');
+            const response = await fetch(endpoint, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            });
+            if (!response.ok) throw new Error('No se pudieron cargar las subatenciones.');
+            const payload = await response.json();
+            payload.results.forEach(function (item) {
+                subSelect.add(new Option(item.name, item.id));
+            });
+            subSelect.disabled = false;
+        } catch (error) {
+            errorBox.textContent = error.message;
+            errorBox.classList.remove('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}
