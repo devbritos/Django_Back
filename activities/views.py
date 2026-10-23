@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.db import IntegrityError, transaction
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -13,12 +14,11 @@ from .forms import (
     EvidenceValidationForm,
 )
 from django.views.generic import TemplateView
-from django.db.models import Sum
+from django.db.models import Exists, OuterRef, Sum
 from core.exports import excel_response
 from core.lists import search_queryset
 from personal.models import Functionary
 from core.mixins import (
-    DelegateRequiredMixin,
     FunctionaryRequiredMixin,
     FunctionaryOrStaffRequiredMixin,
     VerifierRequiredMixin,
@@ -138,7 +138,21 @@ class ActivityCreateView(LoginRequiredMixin, FunctionaryRequiredMixin, CreateVie
             return self.form_invalid(form)
 
         # 2. Guarda la actividad en la BD y genera self.object
-        response = super().form_valid(form)
+        submission_key = form.cleaned_data['submission_key']
+        form.instance.submission_token = submission_key
+        try:
+            with transaction.atomic():
+                response = super().form_valid(form)
+        except IntegrityError:
+            if not Activity.objects.filter(
+                submission_token=submission_key
+            ).exists():
+                raise
+            messages.info(
+                self.request,
+                'Esta actividad ya se registró; se evitó duplicar el envío.',
+            )
+            return redirect(self.success_url)
         messages.success(self.request, 'Actividad registrada correctamente.')
 
         # 3. Si la actividad ingresa al tubo de trabajo (RF-07), redirige a crear compromiso
@@ -312,7 +326,11 @@ class EvidenceValidateView(
 # Create your views here.
 
 
-class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
+class TrafficLightView(
+    LoginRequiredMixin,
+    FunctionaryOrStaffRequiredMixin,
+    TemplateView,
+):
     template_name = 'activities/traffic_light.html'
 
     def get_context_data(self, **kwargs):
@@ -341,21 +359,50 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
             deleted_at__isnull=True
         ).select_related('position', 'delegation')
         user = self.request.user
-        if not user.is_superuser and not user.functionary.has_global_scope:
-            functionaries = functionaries.filter(
-                delegation=user.functionary.delegation
-            )
+        if not user.is_superuser and not user.is_staff:
+            functionary = user.functionary
+            if not functionary.has_global_scope:
+                if functionary.is_delegate:
+                    functionaries = functionaries.filter(
+                        delegation=functionary.delegation
+                    )
+                else:
+                    functionaries = functionaries.filter(pk=functionary.pk)
         traffic_light_data = []
+        active_goals = Goal.objects.filter(
+            period=period,
+            validity=True,
+            deleted_at__isnull=True,
+            measuring__validity=True,
+            measuring__deleted_at__isnull=True,
+        )
+        validated_activities = Activity.objects.filter(
+            date__range=[period.start_date, period.end_date],
+            state_validity='VALIDATED',
+            deleted_at__isnull=True,
+            functionary__in=functionaries,
+        )
+        context['unmatched_validated_activity_count'] = (
+            validated_activities.annotate(
+                has_active_goal=Exists(
+                    active_goals.filter(
+                        position=OuterRef('functionary__position'),
+                        measuring=OuterRef('measuring'),
+                    )
+                )
+            )
+            .filter(has_active_goal=False)
+            .count()
+        )
 
         for func in functionaries:
             # Obtener las metas configuradas para el cargo del funcionario en este período
-            goals = Goal.objects.filter(
+            goals = active_goals.filter(
                 position=func.position,
-                period=period,
-                validity=True
             ).select_related('measuring')
 
             total_weighted_compliance = 0.0
+            matched_activity_count = 0
 
             for goal in goals:
                 # Sumar actividades realizadas y validadas por el funcionario para esta meta/ítem
@@ -365,9 +412,12 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
                     measuring=goal.measuring,
                     date__range=[period.start_date, period.end_date],
                     state_validity='VALIDATED',
+                    deleted_at__isnull=True,
                 ).aggregate(total=Sum('quantity'))
 
                 achieved = achieved_query['total'] or 0
+                if achieved:
+                    matched_activity_count += 1
 
                 # Porcentaje de cumplimiento del ítem (Avance / Meta)
                 target_value = float(goal.target_value)
@@ -396,6 +446,8 @@ class TrafficLightView(LoginRequiredMixin, DelegateRequiredMixin, TemplateView):
                 'functionary': func,
                 'achieved_percentage': round(total_weighted_compliance, 1),
                 'expected_percentage': round(expected_percentage, 1),
+                'has_active_goals': goals.exists(),
+                'has_matched_activities': matched_activity_count > 0,
                 'status': status,
                 'label': label,
             })

@@ -104,6 +104,28 @@ class StaffEvidenceAccessTests(TestCase):
         self.assertContains(list_response, self.commitment.origin)
         self.assertEqual(edit_response.status_code, 200)
 
+    def test_activity_edit_does_not_change_original_activity_date(self):
+        original_date = self.activity.date
+        changed_date = original_date - timedelta(days=1)
+
+        response = self.client.post(
+            reverse('activities:activity_update', args=[self.activity.pk]),
+            {
+                'date': changed_date.isoformat(),
+                'measuring': self.activity.measuring_id,
+                'application': 'Solicitud editada',
+                'taken_action': 'Acción editada',
+                'quantity': self.activity.quantity,
+                'name_contact': self.activity.name_contact,
+                'telephone_contact': self.activity.telephone_contact,
+                'enters_pipe': '',
+            },
+        )
+
+        self.assertRedirects(response, reverse('activities:activity_list'))
+        self.activity.refresh_from_db()
+        self.assertEqual(self.activity.date, original_date)
+
 
 class ActivityValidationAndTrafficLightTests(TestCase):
     def setUp(self):
@@ -180,6 +202,39 @@ class ActivityValidationAndTrafficLightTests(TestCase):
             password='test-password',
         )
 
+    def test_repeated_activity_submission_creates_only_one_record(self):
+        self.client.force_login(self.functionary_user)
+        initial_count = Activity.objects.count()
+        payload = {
+            'date': timezone.localdate().isoformat(),
+            'measuring': self.measuring.pk,
+            'application': 'Solicitud enviada una sola vez',
+            'taken_action': 'Gestión realizada',
+            'quantity': 1,
+            'name_contact': 'Contacto',
+            'telephone_contact': '12345678',
+            'submission_key': 'b1b14575-57e8-4d0a-8d5c-29b9d4708055',
+        }
+
+        first_response = self.client.post(
+            reverse('activities:activity_create'),
+            payload,
+        )
+        second_response = self.client.post(
+            reverse('activities:activity_create'),
+            payload,
+        )
+
+        self.assertRedirects(
+            first_response,
+            reverse('activities:activity_list'),
+        )
+        self.assertRedirects(
+            second_response,
+            reverse('activities:activity_list'),
+        )
+        self.assertEqual(Activity.objects.count(), initial_count + 1)
+
     def test_activity_advances_semaphore_only_after_validation(self):
         self.client.force_login(self.admin)
 
@@ -214,6 +269,42 @@ class ActivityValidationAndTrafficLightTests(TestCase):
                 'achieved_percentage'
             ],
             50,
+        )
+
+    def test_functionary_can_view_only_their_own_traffic_light(self):
+        self.client.force_login(self.functionary_user)
+
+        response = self.client.get(reverse('activities:traffic_light'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [
+                item['functionary'].pk
+                for item in response.context['traffic_light_data']
+            ],
+            [self.functionary.pk],
+        )
+
+    def test_traffic_light_warns_when_validated_activity_has_no_matching_goal(self):
+        self.activity.state_validity = 'VALIDATED'
+        self.activity.save(update_fields=['state_validity'])
+        mismatched_position = Position.objects.create(
+            name='Cargo sin meta para este ítem',
+        )
+        self.functionary.position = mismatched_position
+        self.functionary.save(update_fields=['position'])
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('activities:traffic_light'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['unmatched_validated_activity_count'], 1)
+        self.assertContains(
+            response,
+            'actividad(es) validada(s) no se están contabilizando',
+        )
+        self.assertFalse(
+            response.context['traffic_light_data'][0]['has_active_goals']
         )
 
     def test_functionary_cannot_validate_their_own_activity(self):

@@ -1,5 +1,8 @@
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import models
+
 from core.models import BaseModel
 
 
@@ -10,6 +13,12 @@ class Activity(BaseModel):
         ('REJECTED', 'Rechazado'),
     ]
     date = models.DateField()
+    submission_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     application = models.CharField(max_length=100)
     taken_action = models.TextField()
     name_contact = models.CharField(max_length=70)

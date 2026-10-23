@@ -1,9 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Atenciones ciudadanas{% endblock %}
+{% block extra_head %}
+<style>
+    .attention-create-button {
+        border-color: #244653;
+        background-color: #244653;
+    }
+    .attention-create-button:hover,
+    .attention-create-button:focus-visible {
+        border-color: #193540;
+        background-color: #193540;
+    }
+</style>
+{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h1 class="h3"><i class="bi bi-chat-left-text-fill text-primary me-2"></i>Atenciones ciudadanas</h1><p class="text-muted mb-0">Historial de atenciones registradas</p></div>
-    <a class="btn btn-primary" href="{% url 'atenciones:attention_create' %}"><i class="bi bi-plus-lg"></i> Nueva atención</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">
+            <i class="bi bi-chat-left-text-fill text-primary me-2" aria-hidden="true"></i>
+            Atenciones ciudadanas
+        </h1>
+        <p class="text-muted mb-0">Historial de atenciones registradas</p>
+    </div>
+    <a class="btn btn-primary attention-create-button px-3 py-2 fw-semibold text-nowrap"
+       href="{% url 'atenciones:attention_create' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        Registrar atención
+    </a>
 </div>
 <div class="d-flex gap-2 mb-3">
     <form method="get" class="d-flex gap-2 flex-grow-1">

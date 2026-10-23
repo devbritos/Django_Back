@@ -5,6 +5,18 @@
     <h2 class="mb-4 text-dark fw-bold">
         <i class="bi bi-stoplights text-primary"></i> Semáforo · Seguimiento de avance al día
     </h2>
+
+    {% if unmatched_validated_activity_count %}
+    <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill mt-1" aria-hidden="true"></i>
+        <div>
+            <strong>{{ unmatched_validated_activity_count }} actividad(es) validada(s) no se están contabilizando.</strong>
+            No coinciden con una meta activa del mismo cargo, ítem y período. Revisa
+            <strong>Administración → Ponderaciones por cargo</strong> y confirma que
+            la meta corresponda al cargo y al ítem usados en las actividades.
+        </div>
+    </div>
+    {% endif %}
     
     <div class="row">
         <!-- Tabla principal del semáforo -->
@@ -28,7 +40,14 @@
                                 <!-- Se corrige la llamada al nombre usando los campos de tu modelo -->
                                 <td>{{ item.functionary.names|default:"-" }} {{ item.functionary.lastnames|default:"" }}</td>
                                 <td class="text-center">{{ item.expected_percentage|floatformat:1 }}%</td>
-                                <td class="text-center fw-bold">{{ item.achieved_percentage|floatformat:1 }}%</td>
+                                <td class="text-center fw-bold">
+                                    {{ item.achieved_percentage|floatformat:1 }}%
+                                    {% if not item.has_active_goals %}
+                                    <small class="d-block text-danger fw-normal">Sin meta activa para este cargo</small>
+                                    {% elif not item.has_matched_activities %}
+                                    <small class="d-block text-muted fw-normal">Sin actividades validadas para sus metas</small>
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">
                                     {% if item.status == 'green' %}
                                         <span class="badge bg-success rounded-circle shadow-sm" style="width: 22px; height: 22px;" title="{{ item.label }}"></span>

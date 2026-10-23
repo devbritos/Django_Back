@@ -1,18 +1,21 @@
 from decimal import Decimal
 from django.utils import timezone
+from django.db.models import Sum
 
 
 def calcular_avance(functionary, measuring, period):
-    """RF-022: cuenta las actividades aprobadas del funcionario para ese ítem y período."""
+    """Suma la cantidad registrada en actividades validadas para el período."""
     from activities.models import Activity
 
-    return Activity.objects.filter(
+    result = Activity.objects.filter(
         functionary=functionary,
         measuring=measuring,
-        validation_state='APPROVED',
+        state_validity='VALIDATED',
         date__gte=period.start_date,
         date__lte=period.end_date,
-    ).count()
+        deleted_at__isnull=True,
+    ).aggregate(total=Sum('quantity'))
+    return result['total'] or 0
 
 
 def calcular_porcentaje_cumplimiento(avance, meta):
@@ -68,7 +71,14 @@ def obtener_indicador_funcionario(functionary, period):
     """
     from configuration.models import Goal
 
-    metas = Goal.objects.filter(position=functionary.position, period=period, validity=True)
+    metas = Goal.objects.filter(
+        position=functionary.position,
+        period=period,
+        validity=True,
+        deleted_at__isnull=True,
+        measuring__validity=True,
+        measuring__deleted_at__isnull=True,
+    ).select_related('measuring')
     resultados = []
     total_ponderado = Decimal('0')
 

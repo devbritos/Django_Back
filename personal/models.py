@@ -79,7 +79,9 @@ class Role(BaseModel):
     ]
 
     role_name = models.CharField(
-        max_length=30, unique=True, choices=ROLE_CHOICES
+        max_length=30,
+        unique=True,
+        verbose_name='Nombre del rol',
     )
     description = models.TextField(blank=True, verbose_name='Descripción')
     AUTHORIZED_SCOPE_CHOICES = [
@@ -106,6 +108,10 @@ class Role(BaseModel):
 
     def __str__(self):
         return self.get_role_name_display()
+
+    def get_role_name_display(self):
+        standard_names = dict(self.ROLE_CHOICES)
+        return standard_names.get(self.role_name, self.role_name)
 
 
 class Functionary(BaseModel):

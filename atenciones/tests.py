@@ -167,6 +167,7 @@ class CitizenAttentionTests(TestCase):
 
         response = self.client.get(reverse('atenciones:attention_list'))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Registrar atención')
         self.assertContains(response, 'Vecino de mi delegación')
         self.assertNotContains(response, 'Vecino de otra delegación')
 

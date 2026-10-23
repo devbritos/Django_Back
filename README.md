@@ -138,7 +138,7 @@ python manage.py collectstatic --noinput
 gunicorn config.wsgi:application --bind 0.0.0.0:8000
 ```
 
-Ejecuta Gunicorn como servicio detrás de un proxy web (por ejemplo, Nginx) y permite en el grupo de seguridad solo el tráfico necesario. Las evidencias subidas se guardan en `MEDIA_ROOT`; en AWS configura almacenamiento persistente o un servicio de objetos como S3 y sirve esos archivos de forma segura. `collectstatic` prepara los recursos estáticos, pero estos deben ser servidos por el proxy o un servicio de almacenamiento.
+Ejecuta Gunicorn como servicio detrás de un proxy web (por ejemplo, Nginx) y permite en el grupo de seguridad solo el tráfico necesario. WhiteNoise sirve los archivos estáticos recopilados por `collectstatic`, incluidos los logos y recursos de la interfaz. Las evidencias subidas se guardan en `MEDIA_ROOT`; en AWS configura almacenamiento persistente o un servicio de objetos como S3 y sirve esos archivos de forma segura.
 
 No actives `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` ni HSTS mientras el sitio solo use HTTP. Una vez configurado y probado HTTPS, habilita esas opciones en el `.env` y aumenta `SECURE_HSTS_SECONDS` gradualmente.
 

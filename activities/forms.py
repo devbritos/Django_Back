@@ -1,4 +1,5 @@
 import re
+import uuid
 from django import forms
 from django.utils import timezone
 from .models import Activity, Evidence
@@ -77,6 +78,16 @@ class ActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['date'].disabled = True
+            self.fields['date'].help_text = (
+                'La fecha original del registro no se puede cambiar al editar.'
+            )
+        else:
+            self.fields['submission_key'] = forms.UUIDField(
+                initial=uuid.uuid4,
+                widget=forms.HiddenInput,
+            )
         active_measurings = self.fields['measuring'].queryset.filter(
             validity=True,
             deleted_at__isnull=True,

@@ -1,4 +1,5 @@
 from django import forms
+from django.apps import apps
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -76,6 +77,30 @@ class PositionForm(forms.ModelForm):
 
 
 class RoleForm(forms.ModelForm):
+    PERMISSION_ACTION_LABELS = {
+        'add': 'Crear',
+        'change': 'Editar',
+        'delete': 'Eliminar',
+        'view': 'Ver',
+    }
+
+    role_name = forms.CharField(
+        max_length=30,
+        label='Nombre del rol',
+        help_text=(
+            'Escribe un nombre nuevo o selecciona uno de los roles estándar '
+            'sugeridos. Los permisos especiales se conservan en los roles estándar.'
+        ),
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'list': 'standard-role-names',
+                'placeholder': 'Ej.: Analista de proyectos',
+                'autocomplete': 'off',
+            }
+        ),
+    )
+
     class Meta:
         model = Role
         fields = [
@@ -86,28 +111,78 @@ class RoleForm(forms.ModelForm):
             'is_active',
         ]
         widgets = {
-            'role_name': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'permissions': forms.SelectMultiple(attrs={'class': 'form-select', 'size': 10}),
             'authorized_scope': forms.Select(attrs={'class': 'form-select'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.pk and self.instance.role_name not in dict(
-            self.fields['role_name'].choices
-        ):
-            self.fields['role_name'].choices = [
-                *self.fields['role_name'].choices,
-                (self.instance.role_name, self.instance.role_name),
-            ]
-        self.fields['permissions'].queryset = self.fields[
+        if self.instance.pk:
+            self.initial['role_name'] = self.instance.get_role_name_display()
+        permission_queryset = self.fields[
             'permissions'
         ].queryset.select_related('content_type').order_by(
             'content_type__app_label',
             'codename',
         )
+        self.fields['permissions'].queryset = permission_queryset
+
+        selected_ids = {
+            str(permission_id)
+            for permission_id in (self['permissions'].value() or [])
+        }
+        grouped_permissions = {}
+        for permission in permission_queryset:
+            content_type = permission.content_type
+            app_config = apps.get_app_config(content_type.app_label)
+            group = grouped_permissions.setdefault(
+                content_type.app_label,
+                {
+                    'name': app_config.verbose_name,
+                    'permissions': [],
+                },
+            )
+            action, separator, _ = permission.codename.partition('_')
+            if separator and action in self.PERMISSION_ACTION_LABELS:
+                label = (
+                    f'{self.PERMISSION_ACTION_LABELS[action]} '
+                    f'{content_type.name.lower()}'
+                )
+            else:
+                label = permission.name
+            group['permissions'].append({
+                'id': permission.pk,
+                'label': label,
+                'description': permission.name,
+                'selected': str(permission.pk) in selected_ids,
+            })
+        self.permission_groups = [
+            {'name': group['name'], 'permissions': group['permissions']}
+            for group in grouped_permissions.values()
+        ]
+
+    def clean_role_name(self):
+        role_name = (self.cleaned_data.get('role_name') or '').strip()
+        if not role_name:
+            raise forms.ValidationError('Debes ingresar el nombre del rol.')
+
+        if self.instance.pk and role_name == self.instance.role_name:
+            return role_name
+
+        standard_names = {
+            display_name.casefold(): code
+            for code, display_name in Role.ROLE_CHOICES
+        }
+        role_name = standard_names.get(role_name.casefold(), role_name)
+        duplicate = Role.objects.filter(role_name__iexact=role_name)
+        if self.instance.pk:
+            duplicate = duplicate.exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise forms.ValidationError(
+                'Ya existe un rol con ese nombre. Elige otro nombre.'
+            )
+        return role_name
 
 
 class FunctionaryUpdateForm(forms.ModelForm):
@@ -120,15 +195,28 @@ class FunctionaryUpdateForm(forms.ModelForm):
         queryset=Role.objects.all(),
         required=False,
         label='Roles asignados',
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        widget=forms.CheckboxSelectMultiple(
+            attrs={'class': 'role-checkbox-list'}
+        ),
     )
 
     class Meta:
         model = Functionary
         fields = ['names', 'lastnames', 'delegation', 'position', 'is_active']
+        labels = {
+            'names': 'Nombres',
+            'lastnames': 'Apellidos',
+            'delegation': 'Delegación',
+            'position': 'Cargo',
+            'is_active': 'Funcionario activo',
+        }
         widgets = {
-            'names': forms.TextInput(attrs={'class': 'form-control'}),
-            'lastnames': forms.TextInput(attrs={'class': 'form-control'}),
+            'names': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Ej.: María José'}
+            ),
+            'lastnames': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Ej.: Pérez Soto'}
+            ),
             'delegation': forms.Select(attrs={'class': 'form-select'}),
             'position': forms.Select(attrs={'class': 'form-select'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -257,32 +345,71 @@ class FunctionaryCustomForm(forms.ModelForm):
     # Campos para la cuenta de acceso Django
     username = forms.CharField(
         max_length=150,
-        label="Nombre de Usuario",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: jperez"})
+        label="Nombre de usuario",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Ej.: jperez",
+                "autocomplete": "username",
+            }
+        )
     )
     email = forms.EmailField(
-        label="Correo Electrónico",
-        widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "ejemplo@laserena.cl"})
+        label="Correo electrónico",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "nombre@laserena.cl",
+                "autocomplete": "email",
+            }
+        )
     )
     password = forms.CharField(
         label="Contraseña",
-        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "••••••••"})
+        help_text="Debe cumplir las reglas de seguridad definidas para las contraseñas.",
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Crea una contraseña segura",
+                "autocomplete": "new-password",
+            }
+        )
     )
 
     # Selección múltiple de roles
     roles = forms.ModelMultipleChoiceField(
         queryset=Role.objects.all(),
-        widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
+        widget=forms.CheckboxSelectMultiple(
+            attrs={"class": "role-checkbox-list"}
+        ),
         required=False,
-        label="Roles Asignados"
+        label="Roles del sistema"
     )
 
     class Meta:
         model = Functionary
         fields = ["names", "lastnames", "delegation", "position"]
+        labels = {
+            "names": "Nombres",
+            "lastnames": "Apellidos",
+            "delegation": "Delegación",
+            "position": "Cargo",
+        }
         widgets = {
-            "names": forms.TextInput(attrs={"class": "form-control"}),
-            "lastnames": forms.TextInput(attrs={"class": "form-control"}),
+            "names": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Ej.: María José",
+                    "autocomplete": "given-name",
+                }
+            ),
+            "lastnames": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Ej.: Pérez Soto",
+                    "autocomplete": "family-name",
+                }
+            ),
             "delegation": forms.Select(attrs={"class": "form-select"}),
             "position": forms.Select(attrs={"class": "form-select"}),
         }

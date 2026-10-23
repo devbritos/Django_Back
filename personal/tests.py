@@ -107,6 +107,73 @@ class FunctionaryNameValidationTests(TestCase):
         self.assertTrue(update_form.is_valid(), update_form.errors)
 
 
+class FunctionaryFormViewTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='admin_funcionarios',
+            email='admin_funcionarios@example.com',
+            password='test-password',
+        )
+        self.client.force_login(self.admin)
+        self.delegation = Delegation.objects.create(
+            name='Delegación Formularios',
+            field='URBANO',
+        )
+        self.position = Position.objects.create(name='Cargo Formularios')
+        self.functionary = Functionary.objects.create(
+            delegation=self.delegation,
+            position=self.position,
+            names='María',
+            lastnames='Pérez',
+        )
+
+    def test_create_form_is_presented_in_spanish(self):
+        response = self.client.get(reverse('personal:functionary_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Nuevo funcionario')
+        self.assertContains(response, '/static/images/faroletras.png')
+        self.assertContains(response, 'Datos del funcionario')
+        self.assertContains(response, 'Acceso al sistema')
+        self.assertContains(response, 'Nombres')
+        self.assertContains(response, 'Apellidos')
+        self.assertContains(response, 'Delegación')
+        self.assertContains(response, 'Cargo')
+        self.assertContains(response, 'class="role-checkbox-list"')
+        self.assertNotContains(
+            response,
+            'id="id_roles" class="form-check-input"',
+        )
+        self.assertNotContains(response, '>Names<')
+        self.assertNotContains(response, '>Lastnames<')
+
+    def test_shared_menu_has_desktop_pin_control(self):
+        response = self.client.get(reverse('personal:functionary_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="sidebarPinToggle"')
+        self.assertContains(response, 'id="sidebarMenuToggle"')
+        self.assertContains(response, 'sgr-sidebar-pinned')
+        self.assertContains(response, 'Fijar menú abierto')
+        self.assertContains(
+            response,
+            'Mantener el menú abierto y ajustar el contenido',
+        )
+
+    def test_update_form_is_presented_in_spanish(self):
+        response = self.client.get(
+            reverse(
+                'personal:functionary_update',
+                args=[self.functionary.pk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Editar funcionario')
+        self.assertContains(response, 'Roles del sistema')
+        self.assertContains(response, 'Funcionario activo')
+
+
 class FunctionaryRolePermissionTests(TestCase):
     def test_active_role_grants_its_configured_django_permissions(self):
         user = User.objects.create_user(username='usuario_rbac')
@@ -209,7 +276,7 @@ class RoleCatalogTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.context['form']['role_name'].value(),
-            Role.READONLY,
+            'Usuario de Consulta',
         )
         self.assertEqual(
             response.context['form']['authorized_scope'].value(),
@@ -219,9 +286,68 @@ class RoleCatalogTests(TestCase):
             response.context['form']['permissions'].value(),
             [permission.pk],
         )
+        self.assertContains(
+            response,
+            'value="Usuario de Consulta"',
+        )
+        self.assertContains(response, 'id="permission-search"')
+        self.assertContains(response, 'Marcar visibles')
+        self.assertContains(
+            response,
+            f'id="permission-{permission.pk}"',
+        )
         self.assertRegex(
             response.content.decode(),
-            r'<option value="READONLY" selected>',
+            rf'id="permission-{permission.pk}"\s+checked',
+        )
+
+    def test_role_form_saves_selected_permissions(self):
+        permission = Permission.objects.get(
+            content_type__app_label='activities',
+            codename='view_activity',
+        )
+
+        response = self.client.post(
+            reverse('personal:role_create'),
+            {
+                'role_name': 'Analista de seguimiento',
+                'description': 'Consulta actividades.',
+                'authorized_scope': 'DELEGATION',
+                'permissions': [str(permission.pk)],
+                'is_active': 'on',
+            },
+        )
+
+        self.assertRedirects(response, reverse('personal:role_list'))
+        role = Role.objects.get(role_name='Analista de seguimiento')
+        self.assertQuerySetEqual(
+            role.permissions.all(),
+            [permission],
+            transform=lambda item: item,
+        )
+
+    def test_role_form_preserves_selected_permissions_after_validation_error(self):
+        role = Role.objects.create(role_name=Role.READONLY)
+        permission = Permission.objects.get(
+            content_type__app_label='activities',
+            codename='view_activity',
+        )
+
+        response = self.client.post(
+            reverse('personal:role_update', args=[role.pk]),
+            {
+                'role_name': '',
+                'description': 'Solo consulta',
+                'authorized_scope': 'DELEGATION',
+                'permissions': [str(permission.pk)],
+                'is_active': 'on',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            response.content.decode(),
+            rf'id="permission-{permission.pk}"\s+checked',
         )
 
     def test_role_edit_keeps_legacy_role_selected(self):
@@ -236,7 +362,51 @@ class RoleCatalogTests(TestCase):
             response.context['form']['role_name'].value(),
             'Administrador',
         )
-        self.assertRegex(
-            response.content.decode(),
-            r'<option value="Administrador" selected>',
+        self.assertContains(response, 'value="Administrador"')
+
+    def test_admin_can_create_custom_role_by_typing_its_name(self):
+        response = self.client.get(reverse('personal:role_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'placeholder="Ej.: Analista de proyectos"')
+        self.assertContains(response, 'standard-role-names')
+        self.assertNotContains(response, '<select name="role_name"')
+
+        response = self.client.post(
+            reverse('personal:role_create'),
+            {
+                'role_name': 'Analista de proyectos',
+                'description': 'Consulta y seguimiento de proyectos.',
+                'authorized_scope': 'DELEGATION',
+                'is_active': 'on',
+            },
         )
+
+        self.assertRedirects(response, reverse('personal:role_list'))
+        role = Role.objects.get(role_name='Analista de proyectos')
+        self.assertEqual(role.get_role_name_display(), 'Analista de proyectos')
+        functionary = Functionary.objects.create(
+            delegation=Delegation.objects.create(
+                name='Delegación rol personalizado',
+                field='URBANO',
+            ),
+            position=Position.objects.create(name='Cargo rol personalizado'),
+            names='Funcionario',
+            lastnames='Prueba',
+        )
+        FunctionaryRole.objects.create(functionary=functionary, role=role)
+        self.assertFalse(functionary.is_admin)
+
+    def test_standard_role_name_keeps_its_internal_code(self):
+        response = self.client.post(
+            reverse('personal:role_create'),
+            {
+                'role_name': 'Verificador',
+                'description': 'Rol estándar.',
+                'authorized_scope': 'DELEGATION',
+                'is_active': 'on',
+            },
+        )
+
+        self.assertRedirects(response, reverse('personal:role_list'))
+        self.assertTrue(Role.objects.filter(role_name=Role.VERIFIER).exists())

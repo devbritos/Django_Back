@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, View
+from django.db import transaction
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
@@ -10,6 +11,24 @@ from .forms import GoalForm, MeasuringForm, PeriodForm
 from core.mixins import AdminRequiredMixin
 from core.exports import excel_response
 from core.lists import search_queryset
+
+
+def _save_goal_for_positions(form):
+    positions = list(form.cleaned_data['positions'])
+    goal = form.save(commit=False)
+    goal.position = positions[0]
+    goal.save()
+    for position in positions[1:]:
+        Goal.objects.create(
+            position=position,
+            measuring=goal.measuring,
+            period=goal.period,
+            weight=goal.weight,
+            validity=goal.validity,
+            target_value=goal.target_value,
+            unity=goal.unity,
+        )
+    return goal, len(positions)
 
 
 class GoalListView(LoginRequiredMixin, AdminRequiredMixin, ListView):
@@ -101,10 +120,15 @@ class GoalCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     template_name = 'configuration/goal_form.html'
     success_url = reverse_lazy('configuration:goal_list')
 
+    @transaction.atomic
     def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Meta registrada correctamente.')
-        return response
+        goal, position_count = _save_goal_for_positions(form)
+        self.object = goal
+        messages.success(
+            self.request,
+            f'Meta registrada para {position_count} cargo(s).',
+        )
+        return redirect(self.success_url)
 
 
 class GoalUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
@@ -113,10 +137,15 @@ class GoalUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     template_name = 'configuration/goal_form.html'
     success_url = reverse_lazy('configuration:goal_list')
 
+    @transaction.atomic
     def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, 'Meta actualizada correctamente.')
-        return response
+        goal, position_count = _save_goal_for_positions(form)
+        self.object = goal
+        messages.success(
+            self.request,
+            f'Meta actualizada para {position_count} cargo(s).',
+        )
+        return redirect(self.success_url)
 
 
 class GoalDeactivateView(LoginRequiredMixin, AdminRequiredMixin, View):
