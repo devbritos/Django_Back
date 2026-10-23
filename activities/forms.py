@@ -161,22 +161,68 @@ class EvidenceForm(forms.ModelForm):
     class Meta:
         model = Evidence
         fields = [
+            'activity',
             'name',
             'author',
             'date_evidence',
             'file',
             'metadata',
-            'activity',
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'author': forms.TextInput(attrs={'class': 'form-control'}),
+            'activity': forms.Select(
+                attrs={'class': 'form-select'}
+            ),
+            'name': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Ej.: Registro fotográfico de la actividad',
+                }
+            ),
+            'author': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Nombre de quien elaboró el documento',
+                }
+            ),
             'date_evidence': forms.DateInput(
                 attrs={'type': 'date', 'class': 'form-control'}
             ),
-            'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'metadata': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'activity': forms.Select(attrs={'class': 'form-select'}),
+            'file': forms.ClearableFileInput(
+                attrs={'class': 'form-control'}
+            ),
+            'metadata': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': 3,
+                    'placeholder': 'Describe brevemente qué muestra o acredita el archivo.',
+                }
+            ),
+        }
+        labels = {
+            'activity': 'Actividad relacionada',
+            'name': 'Nombre de la evidencia',
+            'author': 'Autor de la evidencia',
+            'date_evidence': 'Fecha de la evidencia',
+            'file': 'Archivo de respaldo',
+            'metadata': 'Descripción o información adicional',
+        }
+        help_texts = {
+            'activity': 'Selecciona la actividad que respalda este archivo.',
+            'name': 'Usa un nombre breve que permita reconocer la evidencia.',
+            'author': 'Indica quién elaboró o emitió la evidencia.',
+            'date_evidence': 'No puede ser una fecha futura.',
+            'file': 'Selecciona el archivo que quieres adjuntar como respaldo.',
+            'metadata': 'Agrega contexto para facilitar la revisión de la evidencia.',
+        }
+        error_messages = {
+            'activity': {'required': 'Selecciona la actividad relacionada.'},
+            'name': {'required': 'Ingresa el nombre de la evidencia.'},
+            'author': {'required': 'Ingresa el autor de la evidencia.'},
+            'date_evidence': {'required': 'Indica la fecha de la evidencia.'},
+            'file': {'required': 'Selecciona un archivo de respaldo.'},
+            'metadata': {
+                'required': 'Agrega una descripción o información adicional.'
+            },
         }
 
     def __init__(self, *args, activities=None, **kwargs):

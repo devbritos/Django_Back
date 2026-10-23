@@ -80,6 +80,25 @@ class StaffEvidenceAccessTests(TestCase):
         self.assertContains(evidences_response, self.evidence.name)
         self.assertContains(evidences_response, 'Validar')
 
+    def test_evidence_upload_form_uses_spanish_labels_and_guidance(self):
+        self.client.force_login(self.owner_user)
+
+        response = self.client.get(reverse('activities:evidence_create'))
+
+        self.assertEqual(response.status_code, 200)
+        for label in (
+            'Actividad relacionada',
+            'Nombre de la evidencia',
+            'Autor de la evidencia',
+            'Fecha de la evidencia',
+            'Archivo de respaldo',
+            'Descripción o información adicional',
+        ):
+            self.assertContains(response, label)
+        self.assertContains(response, 'Guardar evidencia')
+        self.assertNotContains(response, '>Name<')
+        self.assertNotContains(response, '>Author<')
+
     def test_staff_can_approve_other_users_evidence(self):
         response = self.client.post(
             reverse('activities:evidence_validate', args=[self.evidence.pk]),

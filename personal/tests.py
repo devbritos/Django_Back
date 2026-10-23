@@ -127,6 +127,37 @@ class FunctionaryFormViewTests(TestCase):
             lastnames='Pérez',
         )
 
+    def test_standard_roles_have_distinct_badges_in_role_catalog(self):
+        role_names = (
+            Role.ADMIN,
+            Role.COORDINATOR,
+            Role.DELEGATE,
+            Role.FUNCTIONARY,
+            Role.VERIFIER,
+            Role.READONLY,
+            'Administrador',
+            'Coordinador del Sistema',
+            'Delegado / Jefatura',
+            'Funcionario Operativo',
+            'Verificador',
+            'Usuario de Consulta',
+        )
+        for role_name in role_names:
+            Role.objects.create(role_name=role_name)
+
+        response = self.client.get(reverse('personal:role_list'))
+
+        self.assertEqual(response.status_code, 200)
+        for role_class in (
+            'role-badge--admin',
+            'role-badge--coordinator',
+            'role-badge--delegate',
+            'role-badge--functionary',
+            'role-badge--verifier',
+            'role-badge--readonly',
+        ):
+            self.assertContains(response, role_class)
+
     def test_create_form_is_presented_in_spanish(self):
         response = self.client.get(reverse('personal:functionary_create'))
 

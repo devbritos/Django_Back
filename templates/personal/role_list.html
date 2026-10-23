@@ -34,7 +34,7 @@
             <tbody>
                 {% for role in object_list %}
                 <tr>
-                    <td class="ps-3 fw-semibold">{{ role.get_role_name_display }}</td>
+                    <td class="ps-3">{% include "personal/_role_badge.html" with role=role %}</td>
                     <td>{{ role.description|default:"—" }}</td>
                     <td>{{ role.get_authorized_scope_display }}</td>
                     <td>{{ role.permissions.count }}</td>

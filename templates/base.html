@@ -190,6 +190,10 @@
         }
 
         @media (min-width: 992px) {
+            body.sidebar-pinned .offcanvas-municipal .offcanvas-header {
+                display: none;
+            }
+
             body.sidebar-pinned .app-layout {
                 display: flex;
                 align-items: stretch;
@@ -264,6 +268,26 @@
             color: var(--municipal-red);
             transition: transform 0.15s ease;
         }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.65rem;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+        .role-badge--admin { color: #842029; background: #f8d7da; border-color: #f1aeb5; }
+        .role-badge--coordinator { color: #59359a; background: #eee5ff; border-color: #d2bfff; }
+        .role-badge--delegate { color: #805400; background: #fff1cc; border-color: #ffdf80; }
+        .role-badge--functionary { color: #084298; background: #cfe2ff; border-color: #9ec5fe; }
+        .role-badge--verifier { color: #0f6256; background: #d1e7dd; border-color: #a3cfbb; }
+        .role-badge--readonly,
+        .role-badge--custom { color: #495057; background: #e9ecef; border-color: #ced4da; }
 
         .sidebar-link:hover {
             background-color: #fcf4f4;
@@ -419,14 +443,14 @@
             <a href="{% url 'personal:delegation_list' %}" class="sidebar-link {% if 'delegations' in request.path %}active{% endif %}">
                 <i class="bi bi-geo-alt-fill"></i> Delegaciones
             </a>
-            <a href="{% url 'configuration:goal_list' %}" class="sidebar-link {% if 'metas' in request.path or 'configuration' in request.path %}active{% endif %}">
-                <i class="bi bi-bar-chart-fill"></i> Ponderaciones
+            <a href="{% url 'configuration:goal_list' %}" class="sidebar-link {% if 'metas' in request.path %}active{% endif %}">
+                <i class="bi bi-bar-chart-fill"></i> Metas y ponderaciones
             </a>
             <a href="{% url 'configuration:period_create' %}" class="sidebar-link {% if 'periodos' in request.path %}active{% endif %}">
                 <i class="bi bi-calendar-plus"></i> Nuevo período
             </a>
             <a href="{% url 'configuration:measuring_list' %}" class="sidebar-link {% if 'items' in request.path %}active{% endif %}">
-                <i class="bi bi-list-check"></i> Ítems y metas
+                <i class="bi bi-list-check"></i> Ítems de medición
             </a>
             <a href="{% url 'atenciones:attention_type_list' %}" class="sidebar-link {% if 'tipos' in request.path %}active{% endif %}">
                 <i class="bi bi-tags-fill"></i> Tipos de atención

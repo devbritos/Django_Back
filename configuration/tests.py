@@ -30,6 +30,7 @@ class MeasuringCatalogViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Atención vecinal')
+        self.assertContains(response, 'Ítems de medición')
 
         export = self.client.get(
             reverse('configuration:measuring_list'),
@@ -61,7 +62,7 @@ class MeasuringCatalogViewTests(TestCase):
         self.assertContains(response, 'Código del ítem')
         self.assertContains(response, 'Nombre del ítem de medición')
         self.assertContains(response, 'Identificador único')
-        self.assertContains(response, 'Crear ítem')
+        self.assertContains(response, 'Crear ítem de medición')
 
 
 class GoalFormTests(TestCase):
@@ -89,6 +90,24 @@ class GoalFormTests(TestCase):
             maximum_computable_days=365,
             semaphore='SGR',
         )
+
+    def test_goal_list_distinguishes_target_value_from_weight(self):
+        Goal.objects.create(
+            position=self.position_one,
+            measuring=self.measuring,
+            period=self.period,
+            weight=50,
+            validity=True,
+            target_value=120,
+            unity='atenciones',
+        )
+        response = self.client.get(reverse('configuration:goal_list'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Metas y ponderaciones por cargo')
+        self.assertContains(response, 'Ítem de medición')
+        self.assertContains(response, 'Valor objetivo')
+        self.assertContains(response, 'Ponderación')
 
     def test_goal_form_renders_spanish_labels_and_updated_layout(self):
         response = self.client.get(reverse('configuration:goal_create'))

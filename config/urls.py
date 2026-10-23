@@ -12,7 +12,7 @@ from core.auth_views import (
 from core.forms import UsernameOrEmailAuthenticationForm
 
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="personal:functionary_list")),
+    path("", RedirectView.as_view(pattern_name="dashboard_redirect")),
     path("admin/", admin.site.urls),
     path(
         "accounts/login/",

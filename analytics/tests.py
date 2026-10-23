@@ -108,8 +108,21 @@ class DashboardTests(TestCase):
             response.context['indicador']['items'][0]['avance'],
             3,
         )
+        self.assertContains(response, 'id="sidebarPinToggle"')
         self.assertContains(response, 'Actividad por validar')
         self.assertContains(response, 'Atención territorial')
+        self.assertContains(response, 'images/faro.png')
+
+    def test_site_root_redirects_functionary_to_dashboard(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get('/', follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.redirect_chain[-1][0],
+            reverse('user_dashboard'),
+        )
 
     def test_admin_dashboard_shows_live_system_totals(self):
         self.client.force_login(self.staff)
@@ -125,6 +138,7 @@ class DashboardTests(TestCase):
         self.assertEqual(response.context['actividades_por_validar'], 1)
         self.assertContains(response, 'Actividad validada')
         self.assertContains(response, 'Solicitud vencida')
+        self.assertContains(response, 'images/faro.png')
 
     def test_functionary_with_admin_role_can_open_admin_dashboard(self):
         admin_user = User.objects.create_user(

@@ -113,6 +113,27 @@ class Role(BaseModel):
         standard_names = dict(self.ROLE_CHOICES)
         return standard_names.get(self.role_name, self.role_name)
 
+    @property
+    def badge_style(self):
+        role_styles = {
+            self.ADMIN: 'admin',
+            'Administrador': 'admin',
+            self.COORDINATOR: 'coordinator',
+            'Coordinador': 'coordinator',
+            'Coordinador del Sistema': 'coordinator',
+            self.DELEGATE: 'delegate',
+            'Delegado': 'delegate',
+            'Delegado / Jefatura': 'delegate',
+            self.FUNCTIONARY: 'functionary',
+            'Funcionario': 'functionary',
+            'Funcionario Operativo': 'functionary',
+            self.VERIFIER: 'verifier',
+            'Verificador': 'verifier',
+            self.READONLY: 'readonly',
+            'Usuario de Consulta': 'readonly',
+        }
+        return role_styles.get(self.role_name, 'custom')
+
 
 class Functionary(BaseModel):
     user = models.OneToOneField(
